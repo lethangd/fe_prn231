@@ -1,13 +1,13 @@
-export const addSession = (data) => {
-	return {
-		type: 'ADD_SESSION',
-		data,
-	};
+export const addSession = (token) => {
+  return {
+    type: "ADD_SESSION",
+    data: token,
+  };
 };
 
-export const deleteSession = (data) => {
-	return {
-		type: 'DELETE_SESSION',
-		data,
-	};
+export const deleteSession = () => {
+  return {
+    type: "DELETE_SESSION",
+    data: "",
+  };
 };

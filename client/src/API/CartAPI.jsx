@@ -1,29 +1,35 @@
+// api/CartAPI.js
 import axiosClient from "./axiosClient";
 
 const CartAPI = {
-  getCarts: (query) => {
-    const url = `/cart${query}`;
-    return axiosClient.get(url);
+  // Get cart data
+  getCarts: async () => {
+    const url = "/cart";
+    return axiosClient.get(url); // Gọi API để lấy giỏ hàng
   },
 
-  postAddToCart: (query) => {
-    const url = `/cart/add${query}`;
-    return axiosClient.post(url);
+  // Add product to cart
+  addToCart: async (item) => {
+    const url = "/cart/add";
+    return axiosClient.post(url, item); // Gọi API để thêm sản phẩm
   },
 
-  deleteToCart: (query) => {
-    const url = `/cart/remove${query}`;
-    return axiosClient.delete(url);
+  // Update cart product quantity
+  updateCart: async (productId, quantity) => {
+    const url = `/cart/update/${productId}`;
+    return axiosClient.put(url, { quantity }); // Gọi API để cập nhật số lượng
   },
 
-  putToCart: (query) => {
-    const url = `/cart/update${query}`;
-    return axiosClient.put(url);
+  // Remove product from cart
+  removeFromCart: async (productId) => {
+    const url = `/cart/remove/${productId}`;
+    return axiosClient.delete(url); // Gọi API để xóa sản phẩm
   },
 
-  clearCart: () => {
-    const url = "/cart/clear"; // Chưa có API cart/clear
-    return axiosClient.delete(url);
+  // Clear the entire cart
+  clearCart: async () => {
+    const url = "/cart/clear";
+    return axiosClient.delete(url); // Gọi API để xóa giỏ hàng
   },
 };
 

@@ -6,20 +6,31 @@ import queryString from "query-string";
 MainHistory.propTypes = {};
 
 function MainHistory(props) {
-  const [listCart, setListCart] = useState([]);
+  const [orders, setOrders] = useState([]); // Chúng ta đặt tên là orders để dễ hiểu hơn
 
   useEffect(() => {
     const fetchData = async () => {
+      const token = localStorage.getItem("token"); // Lấy token từ localStorage
+
+      if (!token) {
+        // Kiểm tra xem token có tồn tại không, nếu không thì dừng
+        console.log("Bạn cần đăng nhập để xem lịch sử");
+        return;
+      }
+
       const params = {
-        idUser: localStorage.getItem("id_user"),
+        token: token, // Thay vì idUser, gửi token vào API
       };
 
       const query = "?" + queryString.stringify(params);
 
-      const response = await HistoryAPI.getHistoryAPI(query);
-      console.log(response);
-
-      setListCart(response);
+      try {
+        const response = await HistoryAPI.getHistoryAPI(query);
+        console.log(response);
+        setOrders(response); // Lưu dữ liệu trả về vào state
+      } catch (error) {
+        console.error("Lỗi khi lấy lịch sử: ", error);
+      }
     };
 
     fetchData();
@@ -49,81 +60,60 @@ function MainHistory(props) {
           <thead className="bg-light">
             <tr className="text-center">
               <th className="border-0" scope="col">
-                {" "}
                 <strong className="text-small text-uppercase">ID Order</strong>
               </th>
               <th className="border-0" scope="col">
-                {" "}
-                <strong className="text-small text-uppercase">ID User</strong>
-              </th>
-              <th className="border-0" scope="col">
-                {" "}
                 <strong className="text-small text-uppercase">Name</strong>
               </th>
               <th className="border-0" scope="col">
-                {" "}
                 <strong className="text-small text-uppercase">Phone</strong>
               </th>
               <th className="border-0" scope="col">
-                {" "}
                 <strong className="text-small text-uppercase">Address</strong>
               </th>
               <th className="border-0" scope="col">
-                {" "}
                 <strong className="text-small text-uppercase">Total</strong>
               </th>
               <th className="border-0" scope="col">
-                {" "}
-                <strong className="text-small text-uppercase">Delivery</strong>
+                <strong className="text-small text-uppercase">Payment</strong>
               </th>
               <th className="border-0" scope="col">
-                {" "}
                 <strong className="text-small text-uppercase">Status</strong>
               </th>
               <th className="border-0" scope="col">
-                {" "}
                 <strong className="text-small text-uppercase">Detail</strong>
               </th>
             </tr>
           </thead>
           <tbody>
-            {listCart &&
-              listCart.map((value) => (
-                <tr className="text-center" key={value._id}>
+            {orders &&
+              orders.map((order) => (
+                <tr className="text-center" key={order.orderId}>
                   <td className="align-middle border-0">
-                    <p className="mb-0 small">{value._id}</p>
+                    <p className="mb-0 small">{order.orderId}</p>
                   </td>
                   <td className="align-middle border-0">
-                    <p className="mb-0 small">{value.idUser}</p>
+                    <p className="mb-0 small">{order.nameReceiver}</p>
                   </td>
                   <td className="align-middle border-0">
-                    <p className="mb-0 small">{value.fullname}</p>
+                    <p className="mb-0 small">{order.phoneReceiver}</p>
                   </td>
                   <td className="align-middle border-0">
-                    <p className="mb-0 small">{value.phone}</p>
+                    <p className="mb-0 small">{order.addressReceiver}</p>
                   </td>
                   <td className="align-middle border-0">
-                    <p className="mb-0 small">{value.address}</p>
+                    <p className="mb-0 small">${order.totalPrice}</p>
                   </td>
                   <td className="align-middle border-0">
-                    <p className="mb-0 small">${value.total}</p>
+                    <p className="mb-0 small">{order.payment}</p>
                   </td>
                   <td className="align-middle border-0">
-                    <p className="mb-0 small">
-                      {!value.delivery
-                        ? "Waiting for progressing"
-                        : "Processed"}
-                    </p>
-                  </td>
-                  <td className="align-middle border-0">
-                    <p className="mb-0 small">
-                      {!value.status ? "Waiting for pay" : "Paid"}
-                    </p>
+                    <p className="mb-0 small">{order.status}</p>
                   </td>
                   <td className="align-middle border-0">
                     <Link
                       className="btn btn-outline-dark btn-sm"
-                      to={`/history/${value._id}`}
+                      to={`/history/${order.orderId}`}
                     >
                       View
                       <i className="fas fa-long-arrow-alt-right ml-2"></i>

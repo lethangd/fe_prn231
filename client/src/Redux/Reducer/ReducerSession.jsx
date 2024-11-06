@@ -1,26 +1,30 @@
 const initialState = {
-	idUser: '',
+  token: "",
 };
 
 const ReducerSession = (state = initialState, action) => {
-	switch (action.type) {
-		case 'ADD_SESSION':
-			console.log('idUser: ', action.data);
+  switch (action.type) {
+    case "ADD_SESSION":
+      console.log("Token: ", action.data);
 
-			const stateLogin = [...state.idUser];
-			stateLogin.idUser = action.data;
-			return stateLogin;
+      // Lưu token vào state
+      return {
+        ...state,
+        token: action.data,
+      };
 
-		case 'DELETE_SESSION':
-			console.log('idUser: ', action.data);
+    case "DELETE_SESSION":
+      console.log("Token: ", action.data);
 
-			const stateLogout = [...state.idUser];
-			stateLogout.idUser = action.data;
-			return stateLogout;
+      // Xóa token khi người dùng đăng xuất
+      return {
+        ...state,
+        token: "", // Đặt lại token thành chuỗi rỗng
+      };
 
-		default:
-			return state;
-	}
+    default:
+      return state;
+  }
 };
 
 export default ReducerSession;

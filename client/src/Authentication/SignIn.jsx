@@ -82,18 +82,10 @@ function SignIn(props) {
   useEffect(() => {
     if (checkPush) {
       const fetchData = async () => {
-        for (let i = 0; i < listCart.length; i++) {
-          const params = {
-            idUser: localStorage.getItem("id_user"),
-            idProduct: listCart[i].idProduct,
-            count: listCart[i].count,
-          };
-
-          const query = "?" + queryString.stringify(params);
-          await CartAPI.postAddToCart(query);
+        const token = localStorage.getItem("token");
+        if (token) {
+          setRedirect(true);
         }
-
-        setRedirect(true);
       };
 
       fetchData();

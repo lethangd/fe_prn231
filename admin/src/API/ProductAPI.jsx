@@ -17,7 +17,7 @@ const ProductAPI = {
   },
 
   getPagination: (query) => {
-    const url = `/products/pagination${query}`;
+    const url = `/products${query}`;
     return axiosClient.get(url);
   },
   createProduct: (productData) => {

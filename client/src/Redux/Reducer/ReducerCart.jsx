@@ -1,118 +1,105 @@
-const initalState = {
-	id_user: '',
-	listCart: [],
+const initialState = {
+  token: "",
+  listCart: JSON.parse(localStorage.getItem("listCart")) || [], // Lấy giỏ hàng từ localStorage (nếu có)
 };
 
-const ReducerCart = (state = initalState, action) => {
-	switch (action.type) {
-		//Nhận dữ liệu id_user và thay đổi state
-		case 'ADD_USER':
-			console.log('id_user: ', action.data);
+const ReducerCart = (state = initialState, action) => {
+  switch (action.type) {
+    case "ADD_TOKEN":
+      console.log("Token: ", action.data);
+      state = {
+        ...state,
+        token: action.data, // Lưu token vào state
+      };
+      return state;
 
-			state = {
-				id_user: action.data,
-				listCart: state.listCart,
-			};
+    case "ADD_CART":
+      console.log(action.data);
 
-			return state;
+      const data_add_cart = action.data;
+      const add_cart = [...state.listCart]; // Copy giỏ hàng hiện tại để tránh trực tiếp thay đổi state
 
-		case 'ADD_CART':
-			console.log(action.data);
+      if (add_cart.length < 1) {
+        add_cart.push(data_add_cart);
+      } else {
+        // Tìm vị trí của sản phẩm đã mua
+        const indexCart = add_cart.findIndex(
+          (value) => value.idProduct === data_add_cart.idProduct
+        );
 
-			//Lấy dữ liệu được truyền tới
-			const data_add_cart = action.data;
+        if (indexCart === -1) {
+          add_cart.push(data_add_cart);
+          console.log("Push");
+        } else {
+          add_cart[indexCart].count =
+            parseInt(add_cart[indexCart].count) + parseInt(data_add_cart.count);
+          console.log("Update");
+        }
+      }
 
-			//Lấy dữ liệu có sẵn trong state
-			const add_cart = state.listCart;
+      // Cập nhật lại state và lưu vào localStorage
+      localStorage.setItem("listCart", JSON.stringify(add_cart)); // Lưu giỏ hàng vào localStorage
 
-			if (add_cart.length < 1) {
-				add_cart.push(data_add_cart);
-			} else {
-				//Tìm Vị Trí của sản phẩm đã mua
-				const indexCart = add_cart.findIndex((value) => {
-					return value.idProduct === data_add_cart.idProduct;
-				});
+      state = {
+        ...state,
+        listCart: add_cart,
+      };
 
-				//Tìm xem thử sản phẩm này đã mua hay chưa
-				const findCart = add_cart.find((value) => {
-					return value.idProduct === data_add_cart.idProduct;
-				});
+      console.log(state);
+      return state;
 
-				//Nếu này chưa được mua thì mình push vào
-				//Còn đã từng mua rồi thì mình update tại vị trí indexCart mà mình vừa tìm được
-				if (!findCart) {
-					add_cart.push(data_add_cart);
-					console.log('Push');
-				} else {
-					add_cart[indexCart].count =
-						parseInt(add_cart[indexCart].count) +
-						parseInt(data_add_cart.count);
-					console.log('Update');
-				}
-			}
+    case "DELETE_CART":
+      const data_delete_cart = action.data;
+      const delete_cart = [...state.listCart]; // Copy giỏ hàng hiện tại
 
-			state = {
-				id_user: state.id_user,
-				listCart: add_cart,
-			};
+      const indexDelete = delete_cart.findIndex(
+        (value) => value.idProduct === data_delete_cart.idProduct
+      );
+      if (indexDelete !== -1) {
+        delete_cart.splice(indexDelete, 1);
+      }
 
-			console.log(state);
+      // Cập nhật lại state và lưu vào localStorage
+      localStorage.setItem("listCart", JSON.stringify(delete_cart)); // Lưu giỏ hàng vào localStorage
 
-			return state;
+      state = {
+        ...state,
+        listCart: delete_cart,
+      };
+      return state;
 
-		case 'DELETE_CART':
-			//Lấy dữ liệu được truyền tới
-			const data_delete_cart = action.data;
+    case "DELETE_ALL_CART":
+      // Xóa giỏ hàng
+      localStorage.removeItem("listCart"); // Xóa giỏ hàng khỏi localStorage
+      state = {
+        ...state,
+        listCart: [], // Xóa toàn bộ giỏ hàng trong state
+      };
+      return state;
 
-			//Lấy dữ diệu có sẵn trong state
-			const delete_cart = state.listCart;
+    case "UPDATE_CART":
+      const data_update_cart = action.data;
+      const update_cart = [...state.listCart]; // Copy giỏ hàng hiện tại
 
-			//Tìm kiểm vị trí mà cần xóa
-			const indexDelete = delete_cart.findIndex((value) => {
-				return value.idProduct === data_delete_cart.idProduct;
-			});
+      const indexUpdate = update_cart.findIndex(
+        (value) => value.idProduct === data_update_cart.idProduct
+      );
+      if (indexUpdate !== -1) {
+        update_cart[indexUpdate].count = data_update_cart.count;
+      }
 
-			//Xóa theo vị trí
-			delete_cart.splice(indexDelete, 1);
+      // Cập nhật lại state và lưu vào localStorage
+      localStorage.setItem("listCart", JSON.stringify(update_cart)); // Lưu giỏ hàng vào localStorage
 
-			state = {
-				id_user: state.id_user,
-				listCart: delete_cart,
-			};
+      state = {
+        ...state,
+        listCart: update_cart,
+      };
+      return state;
 
-			return state;
-
-		case 'DELETE_ALL_CART':
-			const data_delete_all_cart = action.data;
-
-			state = {
-				id_user: state.id_user,
-				listCart: data_delete_all_cart,
-			};
-
-			return state;
-
-		case 'UPDATE_CART':
-			const data_update_cart = action.data;
-
-			const update_cart = state.listCart;
-
-			const index = update_cart.findIndex((value) => {
-				return value.idProduct === data_update_cart.idProduct;
-			});
-
-			update_cart[index].count = data_update_cart.count;
-
-			state = {
-				id_user: state.id_user,
-				listCart: update_cart,
-			};
-
-			return state;
-
-		default:
-			return state;
-	}
+    default:
+      return state;
+  }
 };
 
 export default ReducerCart;

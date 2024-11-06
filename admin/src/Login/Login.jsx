@@ -14,12 +14,11 @@ const Login = () => {
       const response = await UserAPI.postLogin({ username, password });
 
       if (response.token) {
-        // Kiểm tra nếu login thành công, lưu token và role vào localStorage
-        if (response.role === "admin") {
-          localStorage.setItem("token", response.token);
-          localStorage.setItem("role", response.role);
-          dispatch({ type: "LOGIN_SUCCESS", payload: response.token });
-        }
+        // Kiểm tra nếu login thành công, lưu token vào localStorage
+        localStorage.setItem("token", response.token);
+
+        // Dispatch action với token
+        dispatch({ type: "LOGIN_SUCCESS", payload: response.token });
       } else {
         alert("Username or password is incorrect!");
       }

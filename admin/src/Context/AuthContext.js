@@ -1,7 +1,7 @@
 import { createContext, useEffect, useReducer } from "react";
 
 const INITIAL_STATE = {
-  user: localStorage.getItem("token") || null,
+  token: localStorage.getItem("token") || null, // Lưu token thay vì user
   loading: false,
   error: null,
 };
@@ -12,25 +12,25 @@ const AuthReducer = (state, action) => {
   switch (action.type) {
     case "LOGIN_START":
       return {
-        user: null,
+        token: null,
         loading: true,
         error: null,
       };
     case "LOGIN_SUCCESS":
       return {
-        user: action.payload,
+        token: action.payload, // Lưu token trong state
         loading: false,
         error: null,
       };
     case "LOGIN_FAILURE":
       return {
-        user: null,
+        token: null,
         loading: false,
         error: action.payload,
       };
     case "LOGOUT":
       return {
-        user: null,
+        token: null, // Xóa token khi logout
         loading: false,
         error: null,
       };
@@ -43,13 +43,17 @@ export const AuthContextProvider = ({ children }) => {
   const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
 
   useEffect(() => {
-    localStorage.setItem("user", JSON.stringify(state.user));
-  }, [state.user]);
+    if (state.token) {
+      localStorage.setItem("token", state.token); // Lưu token vào localStorage
+    } else {
+      localStorage.removeItem("token"); // Xóa token khi logout
+    }
+  }, [state.token]);
 
   return (
     <AuthContext.Provider
       value={{
-        user: state.user,
+        token: state.token, // Truyền token thay vì user
         loading: state.loading,
         error: state.error,
         dispatch,
