@@ -2,8 +2,12 @@ import axiosClient from "./axiosClient";
 
 const UserAPI = {
   getAllData: () => {
-    const url = "/users";
-    return axiosClient.get(url);
+    const url = "/Admin/customers";
+    return axiosClient.get(url, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
   },
 
   getDetailData: (id) => {
