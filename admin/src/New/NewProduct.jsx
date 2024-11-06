@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import ProductAPI from "./ProductAPI"; // Import ProductAPI
+import ProductAPI from "../API/ProductAPI"; // Import ProductAPI
 
 const NewProduct = () => {
   // State for form inputs
