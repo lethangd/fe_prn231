@@ -15,7 +15,7 @@ const Login = () => {
 
       if (response.token) {
         // Kiểm tra nếu login thành công, lưu token vào localStorage
-        localStorage.setItem("token", response.token);
+        localStorage.setItem("tokena", response.token);
 
         // Dispatch action với token
         dispatch({ type: "LOGIN_SUCCESS", payload: response.token });

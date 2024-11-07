@@ -5,7 +5,7 @@ const HistoryAPI = {
     const url = `/orders`;
     return axiosClient.get(url, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${localStorage.getItem("tokena")}`,
       },
     });
   },
@@ -14,7 +14,7 @@ const HistoryAPI = {
     const url = `/orders/${id}`;
     return axiosClient.get(url, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${localStorage.getItem("tokena")}`,
       },
     });
   },
@@ -23,7 +23,7 @@ const HistoryAPI = {
     const url = `/orders`;
     return axiosClient.get(url, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${localStorage.getItem("tokena")}`,
       },
     });
   },

@@ -9,6 +9,7 @@ import Users from "./Users/Users";
 import Login from "./Login/Login";
 import NewProduct from "./New/NewProduct";
 import { AuthContextProvider } from "./Context/AuthContext";
+import ProtectedRoute from "./ProtectedRoute"; // Import ProtectedRoute
 
 function App() {
   return (
@@ -26,16 +27,17 @@ function App() {
             data-boxed-layout="full"
           >
             <Header />
-
             <Menu />
 
             <Switch>
-              <Route exact path="/" component={Home} />
-              <Route path="/users" component={Users} />
-              <Route path="/products" component={Products} />
-              <Route path="/history" component={History} />
+              <ProtectedRoute exact path="/" component={Home} />
               <Route path="/login" component={Login} />
-              <Route path="/new" component={NewProduct} />
+
+              <ProtectedRoute path="/users" component={Users} />
+              <ProtectedRoute path="/products" component={Products} />
+              <ProtectedRoute path="/history" component={History} />
+              <ProtectedRoute path="/new" component={NewProduct} />
+              <ProtectedRoute path="/chat" component={Chat} />
             </Switch>
           </div>
         </BrowserRouter>

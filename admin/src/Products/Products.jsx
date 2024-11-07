@@ -11,8 +11,9 @@ function Products(props) {
     search: "",
     category: "all",
   });
-
   const [search, setSearch] = useState("");
+  const [file, setFile] = useState(null); // State for the selected file
+  const [totalPage, setTotalPage] = useState(1);
 
   // Pagination handler for search input
   const onChangeText = (e) => {
@@ -22,9 +23,6 @@ function Products(props) {
       search: value,
     });
   };
-
-  // Store total page count for pagination
-  const [totalPage, setTotalPage] = useState(1);
 
   // Handler to change page in pagination
   const handlerChangePage = (value) => {
@@ -65,6 +63,86 @@ function Products(props) {
     fetchData();
   }, [pagination]);
 
+  // Handle exporting products to Excel
+  const handleExportToExcel = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/products/export",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type":
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            Authorization: `Bearer ${localStorage.getItem("tokena")}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to export products to Excel");
+      }
+
+      // Create a Blob from the response and trigger a download
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = "Products.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+    }
+  };
+
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile); // Store the selected file
+    }
+  };
+
+  // Handle importing the Excel file
+  const handleImport = async () => {
+    if (!file) {
+      alert("Please select a file to import.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/products/import",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("tokena")}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (response.ok) {
+        alert("Products imported successfully.");
+        // Optionally, you can refresh the product list after importing
+        setPagination({
+          ...pagination,
+          page: "1", // Reset to first page
+        });
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to import: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Error importing file:", error);
+      alert("Error importing products.");
+    }
+  };
+
   return (
     <div className="page-wrapper">
       <div className="page-breadcrumb">
@@ -99,6 +177,26 @@ function Products(props) {
             <div className="card">
               <div className="card-body">
                 <h4 className="card-title">Products</h4>
+
+                {/* Export Button */}
+                <button
+                  className="btn btn-primary mb-3"
+                  onClick={handleExportToExcel}
+                >
+                  Export to Excel
+                </button>
+
+                {/* Import Button and File Input */}
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={handleFileChange}
+                  className="mb-3"
+                />
+                <button className="btn btn-success mb-3" onClick={handleImport}>
+                  Import Products
+                </button>
+
                 <input
                   className="form-control w-25"
                   onChange={onChangeText}

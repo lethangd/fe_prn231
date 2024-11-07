@@ -25,6 +25,7 @@ const ProductAPI = {
     return axiosClient.post(url, productData, {
       headers: {
         "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${localStorage.getItem("tokena")}`,
       },
     });
   },

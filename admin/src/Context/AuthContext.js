@@ -1,7 +1,7 @@
 import { createContext, useEffect, useReducer } from "react";
 
 const INITIAL_STATE = {
-  token: localStorage.getItem("token") || null, // Lưu token thay vì user
+  token: localStorage.getItem("tokena") || null, // Lưu token thay vì user
   loading: false,
   error: null,
 };
@@ -44,9 +44,9 @@ export const AuthContextProvider = ({ children }) => {
 
   useEffect(() => {
     if (state.token) {
-      localStorage.setItem("token", state.token); // Lưu token vào localStorage
+      localStorage.setItem("tokena", state.token); // Lưu token vào localStorage
     } else {
-      localStorage.removeItem("token"); // Xóa token khi logout
+      localStorage.removeItem("tokena"); // Xóa token khi logout
     }
   }, [state.token]);
 
