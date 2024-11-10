@@ -6,6 +6,7 @@ import { addSession } from "../Redux/Action/ActionSession";
 import "./Auth.css";
 import queryString from "query-string";
 import CartAPI from "../API/CartAPI";
+import { Client } from "../api-client"; // Assuming you're using the NSwag client for API calls
 
 function SignIn(props) {
   const listCart = useSelector((state) => state.Cart.listCart);
@@ -56,19 +57,25 @@ function SignIn(props) {
     }
 
     try {
-      // Sending login request to the API
-      const response = await UserAPI.postLogin({ username, password });
+      // Prepare the login request body with empty twoFactorCode and twoFactorRecoveryCode
+      const loginRequest = {
+        email: username, // Assuming 'username' is actually the email
+        password: password,
+        twoFactorCode: "", // Default empty string
+        twoFactorRecoveryCode: "", // Default empty string
+      };
 
-      if (response.token) {
+      // Sending login request to the API using the NSwag client
+      const apiClient = new Client(); // Assuming you've imported the API client
+      const response = await apiClient.login(true, true, loginRequest);
+
+      if (response.accessToken) {
         // Successful login, store the token and role in localStorage
-        localStorage.setItem("token", response.token);
+        localStorage.setItem("token", response.accessToken);
         localStorage.setItem("role", response.role);
 
-        // Optionally, store user-related data
-        // Example: localStorage.setItem('user', JSON.stringify(response.user));
-
         // Dispatch to redux if you need to store the session
-        dispatch(addSession(response.token));
+        dispatch(addSession(response.accessToken));
 
         // Now proceed with the cart actions
         setCheckPush(true);

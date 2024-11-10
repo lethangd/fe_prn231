@@ -3,102 +3,60 @@ import ProductAPI from "../API/ProductAPI";
 import Image from "../Share/img/Image";
 import convertMoney from "../convertMoney";
 import { Link } from "react-router-dom";
-import queryString from "query-string";
+import { Client } from "../api-client";
+
 function Home(props) {
   const [products, setProducts] = useState([]);
-
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true); // Thêm loading để xử lý trạng thái loading khi fetch
+  const apiClient = new Client();
   // Fetch Product
   useEffect(() => {
     const fetchData = async () => {
       // Xây dựng các tham số cho API, ví dụ trang hiện tại và số sản phẩm mỗi trang
       const params = {
-        page: 1, // Trang 1
-        count: 8, // Lấy 8 sản phẩm
+        pageNumber: 1, // Trang 1
+        pageSize: 8, // Lấy 8 sản phẩm
+        sortBy: "default", // Giả sử bạn muốn sắp xếp theo mặc định
+        sortDirection: "asc", // Sắp xếp theo chiều tăng dần
       };
 
       try {
-        const response = await ProductAPI.getAPI(params);
+        const response = await apiClient.productGET(
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          params.pageNumber,
+          params.pageSize,
+          params.sortBy,
+          params.sortDirection
+        );
         console.log(response);
 
+        // Giả sử API trả về response có cấu trúc tương tự như sau:
+        const { items, totalPages } = response;
+
         // Sau khi lấy dữ liệu từ API, lưu vào state
-        setProducts(response.items); // Giả sử API trả về mảng trong `items`
+        setProducts(items); // Lưu sản phẩm
+        setTotalPages(totalPages); // Lưu tổng số trang
+        setLoading(false); // Dữ liệu đã được tải xong
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu sản phẩm: ", error);
+        setLoading(false);
       }
     };
 
     fetchData();
   }, []); // Chạy một lần khi component mount
 
+  if (loading) {
+    return <div>Loading...</div>; // Hiển thị khi đang tải dữ liệu
+  }
+
   return (
     <div className="page-holder">
       <header className="header bg-white">
-        {products &&
-          products.map((value) => (
-            <div
-              className="modal fade show"
-              id={`product_${value.productId}`}
-              key={value.productId}
-            >
-              <div
-                className="modal-dialog modal-lg modal-dialog-centered"
-                role="document"
-              >
-                <div className="modal-content">
-                  <div className="modal-body p-0">
-                    <div className="row align-items-stretch">
-                      <div className="col-lg-6 p-lg-0">
-                        <img
-                          style={{ width: "100%" }}
-                          className="product-view d-block h-100 bg-cover bg-center"
-                          src={value.image}
-                          data-lightbox={`product_${value.productId}`}
-                        />
-                      </div>
-                      <div className="col-lg-6">
-                        {/* Để tắt modal phải có class="close" và data-dissmiss="modal" */}
-                        <a
-                          className="close p-4"
-                          type="button"
-                          href="#section_product"
-                          data-dismiss="modal"
-                          aria-label="Close"
-                        >
-                          ×
-                        </a>
-                        <div className="p-5 my-md-4">
-                          <h2 className="h4">{value.productName}</h2>
-                          <b className="text-muted">
-                            {convertMoney(value.listPrice)} VND
-                          </b>
-                          <br />
-                          <p
-                            className="text-small mb-4"
-                            dangerouslySetInnerHTML={{
-                              __html: value.subDescription,
-                            }}
-                          />
-                          <div className="row align-items-stretch mb-4">
-                            <div className="col-sm-5 pl-sm-0 fix_addwish">
-                              <a
-                                className="btn btn-dark btn-sm btn-block h-100 d-flex align-items-center justify-content-center px-0"
-                                href={`/detail/${value.productId}`}
-                                target="_blank"
-                              >
-                                <i className="fa fa-shopping-cart"></i>
-                                <span className="ml-2">View Detail</span>
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-
         <div className="container">
           <section
             className="hero pb-3 bg-cover bg-center d-flex align-items-center"
@@ -120,6 +78,7 @@ function Home(props) {
               </div>
             </div>
           </section>
+
           <section className="pt-5">
             <header className="text-center">
               <p className="small text-muted small text-uppercase mb-1">
@@ -221,89 +180,6 @@ function Home(props) {
                     </div>
                   </div>
                 ))}
-            </div>
-          </section>
-
-          <section className="py-5 bg-light">
-            <div className="container">
-              <div className="row text-center">
-                <div className="col-lg-4 mb-3 mb-lg-0">
-                  <div className="d-inline-block">
-                    <div className="media align-items-end">
-                      <svg className="svg-icon svg-icon-big svg-icon-light">
-                        <use xlinkHref="#delivery-time-1"></use>
-                      </svg>
-                      <div className="media-body text-left ml-3">
-                        <h6 className="text-uppercase mb-1">Free shipping</h6>
-                        <p className="text-small mb-0 text-muted">
-                          Free shipping worldwide
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-lg-4 mb-3 mb-lg-0">
-                  <div className="d-inline-block">
-                    <div className="media align-items-end">
-                      <svg className="svg-icon svg-icon-big svg-icon-light">
-                        <use xlinkHref="#helpline-24h-1"></use>
-                      </svg>
-                      <div className="media-body text-left ml-3">
-                        <h6 className="text-uppercase mb-1">24 x 7 service</h6>
-                        <p className="text-small mb-0 text-muted">
-                          Free shipping worldwide
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-lg-4">
-                  <div className="d-inline-block">
-                    <div className="media align-items-end">
-                      <svg className="svg-icon svg-icon-big svg-icon-light">
-                        <use xlinkHref="#label-tag-1"></use>
-                      </svg>
-                      <div className="media-body text-left ml-3">
-                        <h6 className="text-uppercase mb-1">Festival offer</h6>
-                        <p className="text-small mb-0 text-muted">
-                          Free shipping worldwide
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="py-5">
-            <div className="container p-0">
-              <div className="row">
-                <div className="col-lg-6 mb-3 mb-lg-0">
-                  <h5 className="text-uppercase">Let's be friends!</h5>
-                </div>
-                <div className="col-lg-6">
-                  <form action="#">
-                    <div className="input-group flex-column flex-sm-row mb-3">
-                      <input
-                        className="form-control form-control-lg py-3"
-                        type="email"
-                        placeholder="Enter your email address"
-                        aria-describedby="button-addon2"
-                      />
-                      <div className="input-group-append">
-                        <button
-                          className="btn btn-dark btn-block"
-                          id="button-addon2"
-                          type="submit"
-                        >
-                          Subscribe
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                </div>
-              </div>
             </div>
           </section>
         </div>

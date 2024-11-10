@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import queryString from "query-string";
-import ProductAPI from "../API/ProductAPI";
-import CategoryAPI from "../API/CategoryAPI"; // Giả sử bạn đã có API này
 import { Link } from "react-router-dom";
+import { Client } from "../api-client"; // Import your NSwag-generated Client
+import queryString from "query-string";
 import Search from "./Component/Search";
 import Pagination from "./Component/Pagination";
 import Products from "./Component/Products";
@@ -12,7 +11,6 @@ import convertMoney from "../convertMoney";
 function Shop(props) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [temp, setTemp] = useState([]);
   const [sort, setSort] = useState("default");
   const [totalPage, setTotalPage] = useState(1);
 
@@ -24,51 +22,72 @@ function Shop(props) {
     sortBy: "default",
   });
 
+  // Initialize the NSwag Client
+  const apiClient = new Client();
+
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
-      const response = await CategoryAPI.getCategories();
-      setCategories(response);
+      try {
+        const response = await apiClient.categoryGET(); // Use NSwag categoryGET method
+        setCategories(response); // Assuming response is an array of categories
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
     };
     fetchCategories();
   }, []);
 
+  // Fetch products count (total pages) based on pagination state
   useEffect(() => {
     const fetchTotalProducts = async () => {
-      const params = {
-        pageIndex: pagination.page,
-        pageSize: pagination.count,
-        sortBy: pagination.sortBy,
-        searchTerm: pagination.search,
-        categoryId: pagination.categoryId, // Lọc theo categoryId
-      };
-
-      const response = await ProductAPI.getAPI(params);
-
-      const totalPages = Math.ceil(response.totalCount / pagination.count);
-      setTotalPage(totalPages);
+      try {
+        const response = await apiClient.productGET(
+          pagination.search,
+          pagination.categoryId,
+          undefined, // minPrice (can be set to something dynamic if needed)
+          undefined, // maxPrice (can be set to something dynamic if needed)
+          pagination.page,
+          pagination.count,
+          pagination.sortBy,
+          undefined // sortDirection (can be set to something dynamic if needed)
+        );
+        const totalPages = Math.ceil(
+          response.totalItemsCount / pagination.count
+        );
+        setTotalPage(totalPages);
+      } catch (error) {
+        console.error("Failed to fetch total products:", error);
+      }
     };
 
     fetchTotalProducts();
   }, [pagination]);
 
+  // Fetch products based on pagination state
   useEffect(() => {
     const fetchData = async () => {
-      const params = {
-        pageIndex: pagination.page,
-        pageSize: pagination.count,
-        sortBy: pagination.sortBy,
-        searchTerm: pagination.search,
-        categoryId: pagination.categoryId, // Lọc theo categoryId
-      };
-
-      const response = await ProductAPI.getAPI(params);
-
-      setProducts(response.items);
+      try {
+        const response = await apiClient.productGET(
+          pagination.search,
+          pagination.categoryId,
+          undefined, // minPrice
+          undefined, // maxPrice
+          pagination.page,
+          pagination.count,
+          pagination.sortBy,
+          undefined // sortDirection
+        );
+        setProducts(response.items); // Assuming 'items' contains the products
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      }
     };
 
     fetchData();
   }, [pagination]);
 
+  // Handle sort changes
   const handlerChangeSort = (value) => {
     setSort(value);
     setPagination({
@@ -77,6 +96,7 @@ function Shop(props) {
     });
   };
 
+  // Handle page changes
   const handlerChangePage = (value) => {
     setPagination({
       ...pagination,
@@ -84,6 +104,7 @@ function Shop(props) {
     });
   };
 
+  // Handle search changes
   const handlerSearch = (value) => {
     setPagination({
       ...pagination,
@@ -91,10 +112,11 @@ function Shop(props) {
     });
   };
 
+  // Handle category selection
   const handlerCategory = (categoryId) => {
     setPagination({
       ...pagination,
-      categoryId: categoryId, // Cập nhật categoryId
+      categoryId: categoryId, // Update category filter
     });
   };
 
@@ -129,19 +151,19 @@ function Shop(props) {
                   <a
                     className="reset-anchor"
                     href="#"
-                    onClick={() => handlerCategory(null)} // All
+                    onClick={() => handlerCategory(null)} // All categories
                   >
                     All
                   </a>
                 </li>
                 {categories.map((category) => (
-                  <li className="mb-2" key={category.categoryId}>
+                  <li className="mb-2" key={category.id}>
                     <a
                       className="reset-anchor"
                       href="#"
-                      onClick={() => handlerCategory(category.categoryId)} // Lọc theo categoryId
+                      onClick={() => handlerCategory(category.id)} // Filter by categoryId
                     >
-                      {category.categoryName}
+                      {category.name}
                     </a>
                   </li>
                 ))}
