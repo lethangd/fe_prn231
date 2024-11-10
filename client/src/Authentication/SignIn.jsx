@@ -6,7 +6,7 @@ import { addSession } from "../Redux/Action/ActionSession";
 import "./Auth.css";
 import queryString from "query-string";
 import CartAPI from "../API/CartAPI";
-import { Client } from "../api-client"; // Assuming you're using the NSwag client for API calls
+import { Client } from "../api-client";
 
 function SignIn(props) {
   const listCart = useSelector((state) => state.Cart.listCart);
