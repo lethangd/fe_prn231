@@ -1,56 +1,60 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Client } from "../api-client"; // Import your NSwag-generated Client
-import queryString from "query-string";
 import Search from "./Component/Search";
 import Pagination from "./Component/Pagination";
 import Products from "./Component/Products";
 import SortProduct from "./Component/SortProduct";
 import convertMoney from "../convertMoney";
 
-function Shop(props) {
+function Shop() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [sort, setSort] = useState("default");
   const [totalPage, setTotalPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const [pagination, setPagination] = useState({
     page: 1,
     count: 9,
     search: "",
-    categoryId: null, // categoryId thay vì category
+    categoryId: null,
     sortBy: "default",
   });
 
-  // Initialize the NSwag Client
   const apiClient = new Client();
 
-  // Fetch categories
+  // Fetch categories with loading and error handling
   useEffect(() => {
     const fetchCategories = async () => {
+      setIsLoading(true);
       try {
-        const response = await apiClient.categoryGET(); // Use NSwag categoryGET method
-        setCategories(response); // Assuming response is an array of categories
+        const response = await apiClient.categoryGET();
+        setCategories(response);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
+        setError("Failed to load categories.");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchCategories();
   }, []);
 
-  // Fetch products count (total pages) based on pagination state
+  // Fetch total products count and set total pages for pagination
   useEffect(() => {
     const fetchTotalProducts = async () => {
+      setIsLoading(true);
       try {
         const response = await apiClient.productGET(
           pagination.search,
           pagination.categoryId,
-          undefined, // minPrice (can be set to something dynamic if needed)
-          undefined, // maxPrice (can be set to something dynamic if needed)
+          undefined,
+          undefined,
           pagination.page,
           pagination.count,
           pagination.sortBy,
-          undefined // sortDirection (can be set to something dynamic if needed)
+          undefined
         );
         const totalPages = Math.ceil(
           response.totalItemsCount / pagination.count
@@ -58,6 +62,9 @@ function Shop(props) {
         setTotalPage(totalPages);
       } catch (error) {
         console.error("Failed to fetch total products:", error);
+        setError("Failed to load products.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -67,27 +74,31 @@ function Shop(props) {
   // Fetch products based on pagination state
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const response = await apiClient.productGET(
           pagination.search,
           pagination.categoryId,
-          undefined, // minPrice
-          undefined, // maxPrice
+          undefined,
+          undefined,
           pagination.page,
           pagination.count,
           pagination.sortBy,
-          undefined // sortDirection
+          undefined
         );
-        setProducts(response.items); // Assuming 'items' contains the products
+        setProducts(response.items);
       } catch (error) {
         console.error("Failed to fetch products:", error);
+        setError("Failed to load products.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchData();
   }, [pagination]);
 
-  // Handle sort changes
+  // Handle sorting changes
   const handlerChangeSort = (value) => {
     setSort(value);
     setPagination({
@@ -104,11 +115,12 @@ function Shop(props) {
     });
   };
 
-  // Handle search changes
+  // Handle search input
   const handlerSearch = (value) => {
     setPagination({
       ...pagination,
       search: value,
+      page: 1, // Reset to first page on search
     });
   };
 
@@ -116,7 +128,8 @@ function Shop(props) {
   const handlerCategory = (categoryId) => {
     setPagination({
       ...pagination,
-      categoryId: categoryId, // Update category filter
+      categoryId,
+      page: 1, // Reset to first page on category change
     });
   };
 
@@ -143,53 +156,64 @@ function Shop(props) {
 
       <section className="py-5">
         <div className="container p-0">
-          <div className="row">
-            <div className="col-lg-3 order-2 order-lg-1">
-              <h5 className="text-uppercase mb-4">Categories</h5>
-              <ul className="list-unstyled small text-muted pl-lg-4 font-weight-normal">
-                <li className="mb-2">
-                  <a
-                    className="reset-anchor"
-                    href="#"
-                    onClick={() => handlerCategory(null)} // All categories
-                  >
-                    All
-                  </a>
-                </li>
-                {categories.map((category) => (
-                  <li className="mb-2" key={category.id}>
+          {error && <div className="alert alert-danger">{error}</div>}
+          {isLoading ? (
+            <div className="text-center my-5">Loading...</div>
+          ) : (
+            <div className="row">
+              <div className="col-lg-3 order-2 order-lg-1">
+                <h5 className="text-uppercase mb-4">Categories</h5>
+                <ul className="list-unstyled small text-muted pl-lg-4 font-weight-normal">
+                  <li className="mb-2">
                     <a
                       className="reset-anchor"
                       href="#"
-                      onClick={() => handlerCategory(category.id)} // Filter by categoryId
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlerCategory(null);
+                      }}
                     >
-                      {category.name}
+                      All
                     </a>
                   </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="col-lg-9 order-1 order-lg-2 mb-5 mb-lg-0">
-              <div className="row mb-3 align-items-center">
-                <Search handlerSearch={handlerSearch} />
-                <div className="col-lg-8">
-                  <ul className="list-inline d-flex align-items-center justify-content-lg-end mb-0">
-                    <li className="list-inline-item">
-                      <SortProduct handlerChangeSort={handlerChangeSort} />
+                  {categories.map((category) => (
+                    <li className="mb-2" key={category.id}>
+                      <a
+                        className="reset-anchor"
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlerCategory(category.id);
+                        }}
+                      >
+                        {category.name}
+                      </a>
                     </li>
-                  </ul>
-                </div>
+                  ))}
+                </ul>
               </div>
 
-              <Products products={products} sort={sort} />
-              <Pagination
-                pagination={pagination}
-                handlerChangePage={handlerChangePage}
-                totalPage={totalPage}
-              />
+              <div className="col-lg-9 order-1 order-lg-2 mb-5 mb-lg-0">
+                <div className="row mb-3 align-items-center">
+                  <Search handlerSearch={handlerSearch} />
+                  <div className="col-lg-8">
+                    <ul className="list-inline d-flex align-items-center justify-content-lg-end mb-0">
+                      <li className="list-inline-item">
+                        <SortProduct handlerChangeSort={handlerChangeSort} />
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <Products products={products} sort={sort} />
+                <Pagination
+                  pagination={pagination}
+                  handlerChangePage={handlerChangePage}
+                  totalPage={totalPage}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
     </div>

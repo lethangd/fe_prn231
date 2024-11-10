@@ -1,14 +1,14 @@
+// components/Checkout.js
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux"; // Import useSelector để lấy dữ liệu từ Redux
-import queryString from "query-string";
-import CheckoutAPI from "../API/CheckoutAPI";
+import { useSelector } from "react-redux";
+import alertify from "alertifyjs";
+import { Client, CreateOrderCommand } from "../api-client"; // Import NSwag-generated Client
 import convertMoney from "../convertMoney";
 import "./Checkout.css";
 
-function Checkout(props) {
-  // Lấy giỏ hàng từ Redux
+function Checkout() {
+  // Retrieve cart items from Redux
   const carts = useSelector((state) => state.Cart.listCart);
-  console.log("Carts:", carts);
 
   const [total, setTotal] = useState(0);
   const [fullname, setFullname] = useState("");
@@ -19,27 +19,27 @@ function Checkout(props) {
   const [emailError, setEmailError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
   const [addressError, setAddressError] = useState(false);
-  const [load, setLoad] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Hàm tính tổng tiền trong giỏ hàng
-  function getTotal(carts) {
-    let sub_total = 0;
-    carts.forEach((value) => {
-      sub_total += parseInt(value.priceProduct) * parseInt(value.count);
-    });
-    setTotal(sub_total);
-  }
+  const apiClient = new Client();
 
-  // Lắng nghe thay đổi trong giỏ hàng Redux
+  // Calculate total price of items in cart
   useEffect(() => {
-    if (carts.length > 0) {
-      getTotal(carts);
-    }
+    const calculateTotal = () => {
+      const totalAmount = carts.reduce(
+        (sum, item) => sum + item.priceProduct * item.count,
+        0
+      );
+      setTotal(totalAmount);
+    };
+
+    if (carts.length > 0) calculateTotal();
   }, [carts]);
 
-  // Kiểm tra và xử lý khi người dùng nhấn "Place order"
-  const handlerSubmit = async () => {
+  // Handle form validation and order submission
+  const handleSubmit = async () => {
+    // Form validation
     if (!fullname || !email || !phone || !address) {
       if (!fullname) setFullnameError(true);
       if (!email) setEmailError(true);
@@ -48,41 +48,48 @@ function Checkout(props) {
       return;
     }
 
-    // Gửi dữ liệu tạo đơn hàng
-    const orderData = {
-      token: localStorage.getItem("token"),
-      nameReceiver: fullname,
-      phoneReceiver: phone,
-      addressReceiver: address,
-      carts,
-      payment: "COD", // Bạn có thể thay đổi tùy theo phương thức thanh toán
-      items: carts.map((item) => ({
-        productId: item.idProduct,
-        quantity: item.count,
-      })),
-    };
+    // Prepare order items in the required format
+    const orderItems = carts.map((item) => ({
+      productId: item.idProduct,
+      quantity: item.count,
+    }));
+
+    // Create the order command
+    const orderData = new CreateOrderCommand({
+      items: orderItems,
+    });
+
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      alertify.error("You need to log in to place an order.");
+      return;
+    }
 
     try {
-      setLoad(true);
+      setLoading(true);
 
-      // Gửi đơn hàng tới API
-      const response = await CheckoutAPI.createOrder(orderData);
-      console.log("Order created:", response);
+      // Send the order request with the token in headers
+      await apiClient.orderPOST(orderData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-      // Delay để hiển thị thông báo thành công
-      setTimeout(() => {
-        setSuccess(true);
-        setLoad(false);
-      }, 3000);
+      // Order successful
+      setSuccess(true);
+      setLoading(false);
     } catch (error) {
       console.error("Error creating order:", error);
-      setLoad(false);
+      alertify.error("Failed to place order. Please try again.");
+      setLoading(false);
     }
   };
 
   return (
     <div>
-      {load && (
+      {loading && (
         <div className="wrapper_loader">
           <div className="loader"></div>
         </div>
@@ -99,7 +106,7 @@ function Checkout(props) {
           </div>
         </section>
 
-        {!success && (
+        {!success ? (
           <section className="py-5">
             <h2 className="h5 text-uppercase mb-4">Billing details</h2>
             <div className="row">
@@ -191,7 +198,7 @@ function Checkout(props) {
                         className="btn btn-dark"
                         style={{ color: "white" }}
                         type="button"
-                        onClick={handlerSubmit}
+                        onClick={handleSubmit}
                       >
                         Place order
                       </button>
@@ -204,22 +211,20 @@ function Checkout(props) {
                   <div className="card-body">
                     <h5 className="text-uppercase mb-4">Your order</h5>
                     <ul className="list-unstyled mb-0">
-                      {carts &&
-                        carts.map((value) => (
-                          <div key={value.idProduct}>
-                            <li className="d-flex align-items-center justify-content-between">
-                              <strong className="small font-weight-bold">
-                                {value.nameProduct}
-                              </strong>
-                              <br></br>
-                              <span className="text-muted small">
-                                {convertMoney(value.priceProduct)} VND x{" "}
-                                {value.count}
-                              </span>
-                            </li>
-                            <li className="border-bottom my-2"></li>
-                          </div>
-                        ))}
+                      {carts.map((item) => (
+                        <li
+                          key={item.idProduct}
+                          className="d-flex align-items-center justify-content-between"
+                        >
+                          <strong className="small font-weight-bold">
+                            {item.nameProduct}
+                          </strong>
+                          <span className="text-muted small">
+                            {convertMoney(item.priceProduct)} VND x {item.count}
+                          </span>
+                        </li>
+                      ))}
+                      <li className="border-bottom my-2"></li>
                       <li className="d-flex align-items-center justify-content-between">
                         <strong className="text-uppercase small font-weight-bold">
                           Total
@@ -232,13 +237,13 @@ function Checkout(props) {
               </div>
             </div>
           </section>
-        )}
-
-        {success && (
+        ) : (
           <section className="py-5">
             <div className="p-5">
-              <h1>You Have Successfully Ordered!</h1>
-              <p style={{ fontSize: "1.2rem" }}>Please Check Your Email.</p>
+              <h1>Your order was successful!</h1>
+              <p style={{ fontSize: "1.2rem" }}>
+                Please check your email for confirmation.
+              </p>
             </div>
           </section>
         )}

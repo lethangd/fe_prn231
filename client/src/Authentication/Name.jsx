@@ -1,29 +1,36 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import UserAPI from "../API/UserAPI";
+import { Client } from "../api-client"; // Import NSwag-generated Client
 
-function Name(props) {
+function Name() {
   const [userProfile, setUserProfile] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      try {
-        // Gọi API để lấy thông tin profile của người dùng
-        const response = await UserAPI.getProfileData();
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setError("You need to log in to view your profile.");
+        return;
+      }
 
-        // Lưu thông tin người dùng vào state
+      try {
+        const apiClient = new Client();
+
+        // Call profileGET without headers
+        const response = await apiClient.profileGET();
+
+        // Set the user's profile data in state
         setUserProfile(response);
       } catch (error) {
-        setError("Failed to fetch user profile");
-        console.error(error);
+        setError("Failed to fetch user profile.");
+        console.error("Profile fetch error:", error);
       }
     };
 
     fetchUserProfile();
   }, []);
 
-  // Nếu có lỗi hoặc chưa lấy được dữ liệu
   if (error) {
     return (
       <li className="nav-item">
@@ -32,7 +39,6 @@ function Name(props) {
     );
   }
 
-  // Nếu chưa có dữ liệu userProfile
   if (!userProfile) {
     return (
       <li className="nav-item">
@@ -52,7 +58,7 @@ function Name(props) {
         aria-expanded="false"
       >
         <i className="fas fa-user-alt mr-1 text-gray"></i>
-        {userProfile.name} {/* Hiển thị tên người dùng */}
+        {`${userProfile.firstName} ${userProfile.lastName}`}
       </a>
       <div className="dropdown-menu mt-3" aria-labelledby="pagesDropdown">
         <Link

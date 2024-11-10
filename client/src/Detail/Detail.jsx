@@ -1,84 +1,117 @@
 // components/Detail.js
 import React, { useEffect, useState } from "react";
-import ProductAPI from "../API/ProductAPI";
 import { Link, useParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import alertify from "alertifyjs";
-import { addCart } from "../Redux/Action/ActionCart";
-import CartAPI from "../API/CartAPI";
-import queryString from "query-string";
-import CommentAPI from "../API/CommentAPI";
 import convertMoney from "../convertMoney";
+import { Client, AddToCartCommand, CreateReviewCommand } from "../api-client"; // Import NSwag-generated classes
 
-function Detail(props) {
-  const [detail, setDetail] = useState({});
-  const [product, setProduct] = useState([]);
-  const [star, setStar] = useState(1);
+function Detail() {
+  const [detail, setDetail] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [quantity, setQuantity] = useState(1);
+  const [reviewTab, setReviewTab] = useState("description");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [comment, setComment] = useState("");
-  const [listComment, setListComment] = useState([]);
-  const [text, setText] = useState(1);
-  const [review, setReview] = useState("description");
+  const [rating, setRating] = useState(1);
 
-  const dispatch = useDispatch();
   const { id } = useParams();
-  const token = localStorage.getItem("token"); // Lấy token từ localStorage
+  const apiClient = new Client();
 
-  // Lấy chi tiết sản phẩm
+  // Fetch product details by ID
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await ProductAPI.getDetail(id);
-      setDetail(response);
-    };
-    fetchData();
-  }, [id]);
-
-  // Lấy danh sách sản phẩm liên quan
-  useEffect(() => {
-    const fetchRelatedProducts = async () => {
-      const params = { page: 1, count: 8 };
+    const fetchProductDetail = async () => {
       try {
-        const response = await ProductAPI.getAPI(queryString.stringify(params));
-        setProduct(response.items);
+        setLoading(true);
+        const productDetail = await apiClient.productGET2(Number(id));
+        setDetail(productDetail);
+        setLoading(false);
       } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu sản phẩm: ", error);
+        console.error("Error fetching product details:", error);
+        setError("Failed to load product details. Please try again later.");
+        setLoading(false);
       }
     };
-    fetchRelatedProducts();
-  }, []);
 
-  // Cập nhật số lượng
-  const onChangeText = (e) => setText(e.target.value);
+    fetchProductDetail();
+  }, [id]);
 
-  const upText = () => setText((prev) => prev + 1);
-  const downText = () => setText((prev) => (prev > 1 ? prev - 1 : 1));
-
-  // Thêm sản phẩm vào giỏ hàng
-  const addToCart = () => {
-    const productData = {
-      idProduct: detail.productId,
-      nameProduct: detail.productName,
-      priceProduct: detail.listPrice,
-      count: text,
-      img: detail.image,
+  // Fetch product reviews by ID
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const reviewData = await apiClient.reviewsGET(Number(id));
+        setReviews(reviewData);
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+        setError("Failed to load reviews. Please try again later.");
+      }
     };
 
-    // Dispatch action thêm sản phẩm vào giỏ hàng Redux
-    dispatch(addCart(productData));
+    fetchReviews();
+  }, [id]);
 
-    alertify.success("Sản phẩm đã được thêm vào giỏ hàng!");
+  // Increase or decrease quantity
+  const increaseQuantity = () => setQuantity((prev) => prev + 1);
+  const decreaseQuantity = () =>
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+
+  // Add product to cart
+  const addToCart = async () => {
+    if (detail && detail.productId) {
+      const addToCartCommand = new AddToCartCommand({
+        productVariantId: detail.productId,
+        quantity,
+      });
+
+      try {
+        await apiClient.cartsPOST(addToCartCommand);
+        alertify.success("Product added to cart successfully!");
+      } catch (error) {
+        console.error("Error adding product to cart:", error);
+        alertify.error("Failed to add product to cart. Please try again.");
+      }
+    }
   };
 
-  // Chuyển đổi giữa Description và Review
-  const handlerReview = (value) => {
-    setReview(value);
+  // Handle review tab selection
+  const handleReviewTab = (tab) => setReviewTab(tab);
+
+  // Submit a new review
+  const submitReview = async () => {
+    const newReview = new CreateReviewCommand({
+      productId: detail.productId,
+      rating,
+      comment,
+    });
+
+    try {
+      await apiClient.reviewsPOST(newReview);
+      alertify.success("Review submitted successfully!");
+      setComment(""); // Clear comment after submission
+      setRating(1); // Reset rating
+      setReviews([...reviews, newReview]); // Optimistically update the review list
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      alertify.error("Failed to submit review. Please try again.");
+    }
   };
+
+  // Loading or error state handling
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
     <section className="py-5">
       <div className="container">
         <div className="row mb-5">
           <div className="col-lg-6">
-            <img className="d-block w-100" src={detail.image} alt="Product" />
+            <img
+              className="d-block w-100"
+              src={detail.image}
+              alt={detail.productName}
+            />
           </div>
 
           <div className="col-lg-6">
@@ -94,16 +127,16 @@ function Detail(props) {
                     Quantity
                   </span>
                   <div className="quantity">
-                    <button className="dec-btn p-0" onClick={downText}>
+                    <button className="dec-btn p-0" onClick={decreaseQuantity}>
                       <i className="fas fa-caret-left"></i>
                     </button>
                     <input
                       className="form-control border-0 shadow-0 p-0"
                       type="text"
-                      value={text}
-                      onChange={onChangeText}
+                      value={quantity}
+                      onChange={(e) => setQuantity(Number(e.target.value))}
                     />
-                    <button className="inc-btn p-0" onClick={upText}>
+                    <button className="inc-btn p-0" onClick={increaseQuantity}>
                       <i className="fas fa-caret-right"></i>
                     </button>
                   </div>
@@ -121,32 +154,55 @@ function Detail(props) {
           </div>
         </div>
 
+        {/* Tabs for Description and Reviews */}
         <ul className="nav nav-tabs border-0">
           <li className="nav-item">
-            <a
-              className="nav-link"
-              onClick={() => handlerReview("description")}
+            <button
+              className={`nav-link ${
+                reviewTab === "description" ? "active" : ""
+              }`}
+              onClick={() => handleReviewTab("description")}
             >
               Description
-            </a>
+            </button>
           </li>
           <li className="nav-item">
-            <a className="nav-link" onClick={() => handlerReview("reviews")}>
+            <button
+              className={`nav-link ${reviewTab === "reviews" ? "active" : ""}`}
+              onClick={() => handleReviewTab("reviews")}
+            >
               Reviews
-            </a>
+            </button>
           </li>
         </ul>
 
         <div className="tab-content py-4">
-          {review === "description" && (
+          {/* Description Tab */}
+          {reviewTab === "description" && (
             <div>
               <h5>Description</h5>
               <p>{detail.description}</p>
             </div>
           )}
-          {review === "reviews" && (
+
+          {/* Reviews Tab */}
+          {reviewTab === "reviews" && (
             <div>
               <h5>Reviews</h5>
+              <ul className="list-unstyled">
+                {reviews.map((review) => (
+                  <li key={review.id} className="mb-2">
+                    <strong>Rating:</strong> {review.rating} / 5
+                    <p>{review.comment}</p>
+                    <small className="text-muted">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </small>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Review Form */}
+              <h5>Write a Review</h5>
               <textarea
                 className="form-control mb-2"
                 placeholder="Write a review..."
@@ -156,18 +212,20 @@ function Detail(props) {
               <div>
                 <label>Rating:</label>
                 <select
-                  value={star}
-                  onChange={(e) => setStar(e.target.value)}
+                  value={rating}
+                  onChange={(e) => setRating(Number(e.target.value))}
                   className="form-control w-auto mb-2"
                 >
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <option key={i} value={i}>
-                      {i} Stars
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <option key={star} value={star}>
+                      {star} Stars
                     </option>
                   ))}
                 </select>
               </div>
-              <button className="btn btn-primary">Submit Review</button>
+              <button className="btn btn-primary" onClick={submitReview}>
+                Submit Review
+              </button>
             </div>
           )}
         </div>

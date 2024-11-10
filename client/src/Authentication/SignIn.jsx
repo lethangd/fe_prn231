@@ -1,39 +1,30 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useDispatch } from "react-redux";
 import { Link, Redirect } from "react-router-dom";
-import UserAPI from "../API/UserAPI";
 import { addSession } from "../Redux/Action/ActionSession";
 import "./Auth.css";
-import queryString from "query-string";
-import CartAPI from "../API/CartAPI";
 import { Client } from "../api-client";
 
-function SignIn(props) {
-  const listCart = useSelector((state) => state.Cart.listCart);
-
+function SignIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorUsername, setErrorUsername] = useState(false);
   const [usernameRegex, setUsernameRegex] = useState(false);
   const [errorPassword, setErrorPassword] = useState(false);
   const [redirect, setRedirect] = useState(false);
-  const [checkPush, setCheckPush] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
+  const apiClient = useRef(new Client()).current;
 
-  const onChangeUsername = (e) => {
-    setUsername(e.target.value);
-  };
+  const onChangeUsername = (e) => setUsername(e.target.value);
+  const onChangePassword = (e) => setPassword(e.target.value);
 
-  const onChangePassword = (e) => {
-    setPassword(e.target.value);
-  };
-
-  const onSubmit = async () => {
-    // Clear any previous login errors
+  const onSubmit = useCallback(async () => {
     setLoginError("");
 
+    // Validate fields
     if (!username) {
       setErrorUsername(true);
       return;
@@ -48,7 +39,6 @@ function SignIn(props) {
       setErrorPassword(false);
     }
 
-    // Assuming username validation is just required to check empty string
     if (username.length === 0) {
       setUsernameRegex(true);
       return;
@@ -57,47 +47,48 @@ function SignIn(props) {
     }
 
     try {
-      // Prepare the login request body with empty twoFactorCode and twoFactorRecoveryCode
+      setLoading(true);
+
+      // Login request body
       const loginRequest = {
-        email: username, // Assuming 'username' is actually the email
+        email: username,
         password: password,
-        twoFactorCode: "", // Default empty string
-        twoFactorRecoveryCode: "", // Default empty string
+        twoFactorCode: "",
+        twoFactorRecoveryCode: "",
       };
 
-      // Sending login request to the API using the NSwag client
-      const apiClient = new Client(); // Assuming you've imported the API client
-      const response = await apiClient.login(true, true, loginRequest);
+      // API call to login
+      const response = await apiClient.login(
+        undefined,
+        undefined,
+        loginRequest
+      );
 
       if (response.accessToken) {
-        // Successful login, store the token and role in localStorage
-        localStorage.setItem("token", response.accessToken);
-        localStorage.setItem("role", response.role);
+        localStorage.setItem("tokenType", response.tokenType);
+        localStorage.setItem("accessToken", response.accessToken);
+        localStorage.setItem("refreshToken", response.refreshToken);
 
-        // Dispatch to redux if you need to store the session
         dispatch(addSession(response.accessToken));
-
-        // Now proceed with the cart actions
-        setCheckPush(true);
+        setRedirect(true);
+      } else {
+        setLoginError("Invalid login credentials.");
       }
     } catch (error) {
-      setLoginError("Invalid username or password");
+      console.error("Login error:", error);
+      setLoginError(
+        error.response?.data?.message || "Invalid username or password."
+      );
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [username, password, apiClient, dispatch]);
 
-  // This effect handles pushing cart items to the server once login is successful
   useEffect(() => {
-    if (checkPush) {
-      const fetchData = async () => {
-        const token = localStorage.getItem("token");
-        if (token) {
-          setRedirect(true);
-        }
-      };
-
-      fetchData();
+    if (redirect) {
+      // Any additional side-effects when redirecting
     }
-  }, [checkPush, listCart]);
+  }, [redirect]);
 
   return (
     <div className="limiter">
@@ -139,9 +130,13 @@ function SignIn(props) {
           </div>
 
           <div className="container-login100-form-btn m-t-20">
-            {redirect && <Redirect to={`/`} />}
-            <button className="login100-form-btn" onClick={onSubmit}>
-              Sign in
+            {redirect && <Redirect to="/" />}
+            <button
+              className="login100-form-btn"
+              onClick={onSubmit}
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </div>
 

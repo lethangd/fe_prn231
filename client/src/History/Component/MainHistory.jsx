@@ -1,40 +1,43 @@
+// components/MainHistory.js
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import HistoryAPI from "../../API/HistoryAPI";
-import queryString from "query-string";
+import alertify from "alertifyjs";
+import { Client } from "../../api-client"; // Import NSwag-generated Client
 
-MainHistory.propTypes = {};
-
-function MainHistory(props) {
-  const [orders, setOrders] = useState([]); // Chúng ta đặt tên là orders để dễ hiểu hơn
+function MainHistory() {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const apiClient = new Client();
 
   useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem("token"); // Lấy token từ localStorage
+    const fetchOrders = async () => {
+      const token = localStorage.getItem("accessToken"); // Get token from localStorage
 
       if (!token) {
-        // Kiểm tra xem token có tồn tại không, nếu không thì dừng
-        console.log("Bạn cần đăng nhập để xem lịch sử");
+        alertify.error("You need to log in to view your order history.");
         return;
       }
 
-      const params = {
-        token: token, // Thay vì idUser, gửi token vào API
-      };
-
-      const query = "?" + queryString.stringify(params);
-
       try {
-        const response = await HistoryAPI.getHistoryAPI(query);
-        console.log(response);
-        setOrders(response); // Lưu dữ liệu trả về vào state
+        setLoading(true);
+        const response = await apiClient.orderGET({
+          headers: { Authorization: `Bearer ${token}` }, // Add token to headers
+        });
+        setOrders(response); // Store fetched orders in state
       } catch (error) {
-        console.error("Lỗi khi lấy lịch sử: ", error);
+        console.error("Error fetching order history:", error);
+        setError("Failed to fetch order history. Please try again.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchData();
+    fetchOrders();
   }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
     <div className="container">
@@ -42,7 +45,7 @@ function MainHistory(props) {
         <div className="container">
           <div className="row px-4 px-lg-5 py-lg-4 align-items-center">
             <div className="col-lg-6">
-              <h1 className="h2 text-uppercase mb-0">History</h1>
+              <h1 className="h2 text-uppercase mb-0">Order History</h1>
             </div>
             <div className="col-lg-6 text-lg-right">
               <nav aria-label="breadcrumb">
@@ -60,25 +63,21 @@ function MainHistory(props) {
           <thead className="bg-light">
             <tr className="text-center">
               <th className="border-0" scope="col">
-                <strong className="text-small text-uppercase">ID Order</strong>
+                <strong className="text-small text-uppercase">Order ID</strong>
               </th>
               <th className="border-0" scope="col">
-                <strong className="text-small text-uppercase">Name</strong>
-              </th>
-              <th className="border-0" scope="col">
-                <strong className="text-small text-uppercase">Phone</strong>
-              </th>
-              <th className="border-0" scope="col">
-                <strong className="text-small text-uppercase">Address</strong>
+                <strong className="text-small text-uppercase">User ID</strong>
               </th>
               <th className="border-0" scope="col">
                 <strong className="text-small text-uppercase">Total</strong>
               </th>
               <th className="border-0" scope="col">
-                <strong className="text-small text-uppercase">Payment</strong>
+                <strong className="text-small text-uppercase">Status</strong>
               </th>
               <th className="border-0" scope="col">
-                <strong className="text-small text-uppercase">Status</strong>
+                <strong className="text-small text-uppercase">
+                  Created At
+                </strong>
               </th>
               <th className="border-0" scope="col">
                 <strong className="text-small text-uppercase">Detail</strong>
@@ -86,41 +85,36 @@ function MainHistory(props) {
             </tr>
           </thead>
           <tbody>
-            {orders &&
-              orders.map((order) => (
-                <tr className="text-center" key={order.orderId}>
-                  <td className="align-middle border-0">
-                    <p className="mb-0 small">{order.orderId}</p>
-                  </td>
-                  <td className="align-middle border-0">
-                    <p className="mb-0 small">{order.nameReceiver}</p>
-                  </td>
-                  <td className="align-middle border-0">
-                    <p className="mb-0 small">{order.phoneReceiver}</p>
-                  </td>
-                  <td className="align-middle border-0">
-                    <p className="mb-0 small">{order.addressReceiver}</p>
-                  </td>
-                  <td className="align-middle border-0">
-                    <p className="mb-0 small">${order.totalPrice}</p>
-                  </td>
-                  <td className="align-middle border-0">
-                    <p className="mb-0 small">{order.payment}</p>
-                  </td>
-                  <td className="align-middle border-0">
-                    <p className="mb-0 small">{order.status}</p>
-                  </td>
-                  <td className="align-middle border-0">
-                    <Link
-                      className="btn btn-outline-dark btn-sm"
-                      to={`/history/${order.orderId}`}
-                    >
-                      View
-                      <i className="fas fa-long-arrow-alt-right ml-2"></i>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+            {orders.map((order) => (
+              <tr className="text-center" key={order.id}>
+                <td className="align-middle border-0">
+                  <p className="mb-0 small">{order.id}</p>
+                </td>
+                <td className="align-middle border-0">
+                  <p className="mb-0 small">{order.userId}</p>
+                </td>
+                <td className="align-middle border-0">
+                  <p className="mb-0 small">${order.totalAmount}</p>
+                </td>
+                <td className="align-middle border-0">
+                  <p className="mb-0 small">{order.status}</p>
+                </td>
+                <td className="align-middle border-0">
+                  <p className="mb-0 small">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </p>
+                </td>
+                <td className="align-middle border-0">
+                  <Link
+                    className="btn btn-outline-dark btn-sm"
+                    to={`/history/${order.id}`}
+                  >
+                    View
+                    <i className="fas fa-long-arrow-alt-right ml-2"></i>
+                  </Link>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

@@ -1,25 +1,24 @@
+// reducers/ReducerSession.js
 const initialState = {
-  token: "",
+  token: localStorage.getItem("accessToken") || "",
 };
 
 const ReducerSession = (state = initialState, action) => {
   switch (action.type) {
     case "ADD_SESSION":
-      console.log("Token: ", action.data);
-
-      // Lưu token vào state
+      // Save token to localStorage
+      localStorage.setItem("accessToken", action.data);
       return {
         ...state,
         token: action.data,
       };
 
     case "DELETE_SESSION":
-      console.log("Token: ", action.data);
-
-      // Xóa token khi người dùng đăng xuất
+      // Clear token from localStorage
+      localStorage.removeItem("accessToken");
       return {
         ...state,
-        token: "", // Đặt lại token thành chuỗi rỗng
+        token: "",
       };
 
     default:

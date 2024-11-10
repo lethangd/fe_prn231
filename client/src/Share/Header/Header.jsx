@@ -13,13 +13,14 @@ function Header(props) {
 
   // Kiểm tra token trong localStorage, nếu có thì dispatch vào Redux
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("accessToken");
     if (token) {
       dispatch(addSession(token)); // Lưu token vào Redux
     } else {
       // Nếu không có token, tạo token tạm thời và lưu vào localStorage và Redux
-      const tempToken = "abc999";
-      localStorage.setItem("token", tempToken);
+      const tempToken =
+        "CfDJ8G4g0lugToNBrkRsP71wZsrAWdGuAQ4Iyeef4WiKXEXPoxF1vC8VTu90jb3Qek560qgUNyuuZB0_rMuB44CrxDTE_eBe6dd5BOu_KbQ-O7X4bArTtUb4AadoyAnHvO2oUe6jEx6XdCz5ba7YwRuqjicvw6g9Fj6_LkQj-AQMwIvvb8-JhAt92xJKGER7h5H9WEZmzmSp0oVlQ2cQbG1aL1XmFV4qzgX2f8wFk6uCsvQX81s_wn_50IZQwd2Ay-ifHoFOUvt5kW_8p6VjlrnJMxSYnKqFCPP_FLdQu-vSKfvOGaE51T0owFHxjVIbj3IZ5GY8fQxKaln-pIFysGgvYSsPevEIn8E3QPkb8340Bc_MFSBGbqpDyM-LW-OnL_6KXJjK2kv0UAO5RB6t0G-_JpCYyOe6Z35OdDIIFay-ekPBqIuUVImfbJOkCYEQ3I3ArMf4s_FsOjcnE8EU-idp3xC7EbnEOBuP9J9YoNJk1dtBrJICHgEbkh3LrUqbyE_xaNUE1kQ-eCWRYwkr9BaeVyIOnef9xSY5ctW_UvhsPJFJu-ZTmcA7ntY184YGAB7RaWFG5KGf9-AOM6Jg8IUd3VnMZq6MGRfFXX_xfwbrXoM7V1IZt_ohFFP_qYG6TNMD5kCAuOwhASiYnw8GYbRpJK3bQD1dCULO0Q4YTiPsywyKXrGT55LuFgCeWhqKuk_4NW8JF9xtmbMGtxrn43iqAtE";
+      localStorage.setItem("accessToken", tempToken);
       dispatch(addSession(tempToken)); // Lưu token tạm vào Redux
     }
   }, [dispatch]);

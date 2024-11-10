@@ -18,7 +18,7 @@ function Chat(props) {
   const [load, setLoad] = useState(false);
 
   // Lấy token từ localStorage
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
 
   // Hàm này dùng để mở hộp thoại chat
   const onChat = () => {

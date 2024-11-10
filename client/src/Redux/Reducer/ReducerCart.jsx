@@ -1,101 +1,64 @@
+// reducers/ReducerCart.js
 const initialState = {
-  token: "",
-  listCart: JSON.parse(localStorage.getItem("listCart")) || [], // Lấy giỏ hàng từ localStorage (nếu có)
+  listCart: JSON.parse(localStorage.getItem("listCart")) || [],
 };
 
 const ReducerCart = (state = initialState, action) => {
   switch (action.type) {
-    case "ADD_TOKEN":
-      console.log("Token: ", action.data);
-      state = {
-        ...state,
-        token: action.data, // Lưu token vào state
-      };
-      return state;
-
     case "ADD_CART":
-      console.log(action.data);
+      const newCartItem = action.data;
+      const updatedCart = [...state.listCart];
 
-      const data_add_cart = action.data;
-      const add_cart = [...state.listCart]; // Copy giỏ hàng hiện tại để tránh trực tiếp thay đổi state
+      // Check if product already exists in the cart
+      const itemIndex = updatedCart.findIndex(
+        (item) => item.idProduct === newCartItem.idProduct
+      );
 
-      if (add_cart.length < 1) {
-        add_cart.push(data_add_cart);
+      if (itemIndex !== -1) {
+        updatedCart[itemIndex] = {
+          ...updatedCart[itemIndex],
+          count: updatedCart[itemIndex].count + newCartItem.count,
+        };
       } else {
-        // Tìm vị trí của sản phẩm đã mua
-        const indexCart = add_cart.findIndex(
-          (value) => value.idProduct === data_add_cart.idProduct
-        );
-
-        if (indexCart === -1) {
-          add_cart.push(data_add_cart);
-          console.log("Push");
-        } else {
-          add_cart[indexCart].count =
-            parseInt(add_cart[indexCart].count) + parseInt(data_add_cart.count);
-          console.log("Update");
-        }
+        updatedCart.push(newCartItem);
       }
 
-      // Cập nhật lại state và lưu vào localStorage
-      localStorage.setItem("listCart", JSON.stringify(add_cart)); // Lưu giỏ hàng vào localStorage
-
-      state = {
+      localStorage.setItem("listCart", JSON.stringify(updatedCart));
+      return {
         ...state,
-        listCart: add_cart,
+        listCart: updatedCart,
       };
-
-      console.log(state);
-      return state;
 
     case "DELETE_CART":
-      const data_delete_cart = action.data;
-      const delete_cart = [...state.listCart]; // Copy giỏ hàng hiện tại
-
-      const indexDelete = delete_cart.findIndex(
-        (value) => value.idProduct === data_delete_cart.idProduct
+      const filteredCart = state.listCart.filter(
+        (item) => item.idProduct !== action.data.idProduct
       );
-      if (indexDelete !== -1) {
-        delete_cart.splice(indexDelete, 1);
-      }
 
-      // Cập nhật lại state và lưu vào localStorage
-      localStorage.setItem("listCart", JSON.stringify(delete_cart)); // Lưu giỏ hàng vào localStorage
-
-      state = {
+      localStorage.setItem("listCart", JSON.stringify(filteredCart));
+      return {
         ...state,
-        listCart: delete_cart,
+        listCart: filteredCart,
       };
-      return state;
 
     case "DELETE_ALL_CART":
-      // Xóa giỏ hàng
-      localStorage.removeItem("listCart"); // Xóa giỏ hàng khỏi localStorage
-      state = {
+      localStorage.removeItem("listCart");
+      return {
         ...state,
-        listCart: [], // Xóa toàn bộ giỏ hàng trong state
+        listCart: [],
       };
-      return state;
 
     case "UPDATE_CART":
-      const data_update_cart = action.data;
-      const update_cart = [...state.listCart]; // Copy giỏ hàng hiện tại
-
-      const indexUpdate = update_cart.findIndex(
-        (value) => value.idProduct === data_update_cart.idProduct
+      const updatedCartList = state.listCart.map((item) =>
+        item.idProduct === action.data.idProduct
+          ? { ...item, count: action.data.count }
+          : item
       );
-      if (indexUpdate !== -1) {
-        update_cart[indexUpdate].count = data_update_cart.count;
-      }
 
-      // Cập nhật lại state và lưu vào localStorage
-      localStorage.setItem("listCart", JSON.stringify(update_cart)); // Lưu giỏ hàng vào localStorage
-
-      state = {
+      localStorage.setItem("listCart", JSON.stringify(updatedCartList));
+      return {
         ...state,
-        listCart: update_cart,
+        listCart: updatedCartList,
       };
-      return state;
 
     default:
       return state;

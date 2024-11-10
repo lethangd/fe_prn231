@@ -15,7 +15,7 @@ export class Client {
 
     constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
         this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
+        this.baseUrl = baseUrl ?? "https://localhost:7097";
     }
 
     /**
@@ -1103,15 +1103,10 @@ export class Client {
     }
 
     /**
-     * @param isAdmin (optional) 
      * @return OK
      */
-    orderGET(isAdmin: boolean | undefined): Promise<void> {
-        let url_ = this.baseUrl + "/api/Order?";
-        if (isAdmin === null)
-            throw new Error("The parameter 'isAdmin' cannot be null.");
-        else if (isAdmin !== undefined)
-            url_ += "isAdmin=" + encodeURIComponent("" + isAdmin) + "&";
+    orderGET(): Promise<void> {
+        let url_ = this.baseUrl + "/api/Order";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -1270,19 +1265,21 @@ export class Client {
         });
     }
 
-    protected processProductGET(response: Response): Promise<void> {
+    protected processProductGET(response: Response): Promise<any> { // Update the return type to Promise<any>
         const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        const _headers: any = {};
+        
+        if (response.headers && response.headers.forEach) {
+            response.headers.forEach((v: any, k: any) => _headers[k] = v);
+        }
+    
         if (status === 200) {
+            return response.json(); // Parse and return JSON response
+        } else {
             return response.text().then((_responseText) => {
-            return;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+                throw new Error(`An unexpected server error occurred. Status: ${status}, Response: ${_responseText}`);
             });
         }
-        return Promise.resolve<void>(null as any);
     }
 
     /**
@@ -1517,14 +1514,14 @@ export class Client {
     /**
      * @return OK
      */
-    variantsGET(id: number, productId: string): Promise<void> {
+    variantsGET(productId: number, id: number): Promise<void> {
         let url_ = this.baseUrl + "/api/products/{productId}/variants/{id}";
-        if (id === undefined || id === null)
-            throw new Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
         if (productId === undefined || productId === null)
             throw new Error("The parameter 'productId' must be defined.");
         url_ = url_.replace("{productId}", encodeURIComponent("" + productId));
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -1557,14 +1554,14 @@ export class Client {
      * @param body (optional) 
      * @return OK
      */
-    variantsPUT(id: number, productId: string, body: UpdateVariantCommand | undefined): Promise<void> {
+    variantsPUT(productId: number, id: number, body: UpdateVariantCommand | undefined): Promise<void> {
         let url_ = this.baseUrl + "/api/products/{productId}/variants/{id}";
-        if (id === undefined || id === null)
-            throw new Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
         if (productId === undefined || productId === null)
             throw new Error("The parameter 'productId' must be defined.");
         url_ = url_.replace("{productId}", encodeURIComponent("" + productId));
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(body);
@@ -1600,14 +1597,14 @@ export class Client {
     /**
      * @return OK
      */
-    variantsDELETE(id: number, productId: string): Promise<void> {
+    variantsDELETE(productId: number, id: number): Promise<void> {
         let url_ = this.baseUrl + "/api/products/{productId}/variants/{id}";
-        if (id === undefined || id === null)
-            throw new Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
         if (productId === undefined || productId === null)
             throw new Error("The parameter 'productId' must be defined.");
         url_ = url_.replace("{productId}", encodeURIComponent("" + productId));
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -1678,16 +1675,204 @@ export class Client {
     }
 
     /**
+     * @param body (optional) 
      * @return OK
      */
-    profileGET(): Promise<void> {
-        let url_ = this.baseUrl + "/api/users/profile";
+    reviewsPOST(body: CreateReviewCommand | undefined): Promise<void> {
+        let url_ = this.baseUrl + "/api/Reviews";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processReviewsPOST(_response);
+        });
+    }
+
+    protected processReviewsPOST(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    product(productId: number): Promise<void> {
+        let url_ = this.baseUrl + "/api/Reviews/product/{productId}";
+        if (productId === undefined || productId === null)
+            throw new Error("The parameter 'productId' must be defined.");
+        url_ = url_.replace("{productId}", encodeURIComponent("" + productId));
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
             headers: {
             }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processProduct(_response);
+        });
+    }
+
+    protected processProduct(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    reviewsPUT(id: number, body: UpdateReviewCommand | undefined): Promise<void> {
+        let url_ = this.baseUrl + "/api/Reviews/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processReviewsPUT(_response);
+        });
+    }
+
+    protected processReviewsPUT(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    reviewsDELETE(id: number): Promise<void> {
+        let url_ = this.baseUrl + "/api/Reviews/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processReviewsDELETE(_response);
+        });
+    }
+
+    protected processReviewsDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    reviewsGET(id: number): Promise<void> {
+        let url_ = this.baseUrl + "/api/Reviews/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processReviewsGET(_response);
+        });
+    }
+
+    protected processReviewsGET(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    profileGET(): Promise<void> {
+        let url_ = this.baseUrl + "/api/users/profile";
+        url_ = url_.replace(/[?&]$/, "");
+        let token = localStorage.getItem("accessToken");
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Authorization": token ? `Bearer ${token}` : "", // Thêm token vào headers
+            },
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
@@ -1699,9 +1884,7 @@ export class Client {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
-            return response.text().then((_responseText) => {
-            return;
-            });
+            return response.json();
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -2134,8 +2317,6 @@ export interface ICreateConversationCommand {
 }
 
 export class CreateOrderCommand implements ICreateOrderCommand {
-    userId?: number;
-    totalAmount?: number;
     items?: OrderItemDTO[] | undefined;
 
     constructor(data?: ICreateOrderCommand) {
@@ -2149,8 +2330,6 @@ export class CreateOrderCommand implements ICreateOrderCommand {
 
     init(_data?: any) {
         if (_data) {
-            this.userId = _data["userId"];
-            this.totalAmount = _data["totalAmount"];
             if (Array.isArray(_data["items"])) {
                 this.items = [] as any;
                 for (let item of _data["items"])
@@ -2168,8 +2347,6 @@ export class CreateOrderCommand implements ICreateOrderCommand {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["userId"] = this.userId;
-        data["totalAmount"] = this.totalAmount;
         if (Array.isArray(this.items)) {
             data["items"] = [];
             for (let item of this.items)
@@ -2180,8 +2357,6 @@ export class CreateOrderCommand implements ICreateOrderCommand {
 }
 
 export interface ICreateOrderCommand {
-    userId?: number;
-    totalAmount?: number;
     items?: OrderItemDTO[] | undefined;
 }
 
@@ -2261,10 +2436,55 @@ export interface ICreateProductCommand {
     updatedAt?: Date;
 }
 
+export class CreateReviewCommand implements ICreateReviewCommand {
+    productId!: number;
+    rating!: number;
+    comment?: string | undefined;
+
+    constructor(data?: ICreateReviewCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.productId = _data["productId"];
+            this.rating = _data["rating"];
+            this.comment = _data["comment"];
+        }
+    }
+
+    static fromJS(data: any): CreateReviewCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateReviewCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["productId"] = this.productId;
+        data["rating"] = this.rating;
+        data["comment"] = this.comment;
+        return data;
+    }
+}
+
+export interface ICreateReviewCommand {
+    productId: number;
+    rating: number;
+    comment?: string | undefined;
+}
+
 export class CreateVariantCommand implements ICreateVariantCommand {
     productId?: number;
     sku?: string | undefined;
     price?: number;
+    attributes?: string | undefined;
 
     constructor(data?: ICreateVariantCommand) {
         if (data) {
@@ -2280,6 +2500,7 @@ export class CreateVariantCommand implements ICreateVariantCommand {
             this.productId = _data["productId"];
             this.sku = _data["sku"];
             this.price = _data["price"];
+            this.attributes = _data["attributes"];
         }
     }
 
@@ -2295,6 +2516,7 @@ export class CreateVariantCommand implements ICreateVariantCommand {
         data["productId"] = this.productId;
         data["sku"] = this.sku;
         data["price"] = this.price;
+        data["attributes"] = this.attributes;
         return data;
     }
 }
@@ -2303,6 +2525,7 @@ export interface ICreateVariantCommand {
     productId?: number;
     sku?: string | undefined;
     price?: number;
+    attributes?: string | undefined;
 }
 
 export class ForgotPasswordRequest implements IForgotPasswordRequest {
@@ -3072,6 +3295,50 @@ export interface IUpdateCategoryCommand {
     id?: number;
     name?: string | undefined;
     description?: string | undefined;
+}
+
+export class UpdateReviewCommand implements IUpdateReviewCommand {
+    id?: number;
+    rating?: number;
+    comment?: string | undefined;
+
+    constructor(data?: IUpdateReviewCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.rating = _data["rating"];
+            this.comment = _data["comment"];
+        }
+    }
+
+    static fromJS(data: any): UpdateReviewCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateReviewCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["rating"] = this.rating;
+        data["comment"] = this.comment;
+        return data;
+    }
+}
+
+export interface IUpdateReviewCommand {
+    id?: number;
+    rating?: number;
+    comment?: string | undefined;
 }
 
 export class UpdateUserDetailsCommand implements IUpdateUserDetailsCommand {

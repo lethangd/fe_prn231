@@ -1,54 +1,96 @@
+// components/Cart.js
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { deleteCart, updateCart } from "../Redux/Action/ActionCart";
+import { useDispatch } from "react-redux";
 import ListCart from "./Component/ListCart";
 import alertify from "alertifyjs";
-import { Link, useHistory } from "react-router-dom"; // Dùng useHistory thay vì useNavigate
+import { Link, useHistory } from "react-router-dom";
 import convertMoney from "../convertMoney";
+import { Client } from "../api-client"; // Import NSwag-generated Client
 
 function Cart() {
-  const token = useSelector((state) => state.Session.token); // Lấy token từ Redux
-  const listCart = useSelector((state) => state.Cart.listCart); // Lấy danh sách giỏ hàng từ Redux
-  const [cart, setCart] = useState(listCart); // State local để quản lý giỏ hàng
-  const [total, setTotal] = useState(0); // Tổng tiền giỏ hàng
-  const dispatch = useDispatch(); // Dispatch actions
-  const history = useHistory(); // Hook để điều hướng trang
+  const [cart, setCart] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const history = useHistory();
+  const apiClient = new Client();
 
-  // Hàm tính tổng tiền giỏ hàng
-  const getTotal = (carts) => {
-    let sub_total = 0;
-    carts.forEach((item) => {
-      sub_total += parseInt(item.priceProduct) * parseInt(item.count);
-    });
-    setTotal(sub_total);
-  };
-
-  // Lắng nghe sự thay đổi trong giỏ hàng (từ Redux)
+  // Fetch cart data from server
   useEffect(() => {
-    setCart(listCart);
-    getTotal(listCart);
-  }, [listCart]);
+    const fetchCart = async () => {
+      const token = localStorage.getItem("accessToken");
 
-  // Xử lý xóa sản phẩm khỏi giỏ hàng
-  const onDeleteCart = (productId) => {
-    dispatch(deleteCart({ idProduct: productId }));
-    alertify.success("Sản phẩm đã được xóa khỏi giỏ hàng!");
+      if (!token) {
+        alertify.error("You need to log in to view your cart.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await apiClient.cartsGET({
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCart(response);
+        calculateTotal(response);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching cart data:", error);
+        setError("Failed to load cart. Please try again.");
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, []);
+
+  // Calculate total cost
+  const calculateTotal = (cartItems) => {
+    const totalAmount = cartItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+    setTotal(totalAmount);
   };
 
-  // Cập nhật số lượng sản phẩm
-  const onUpdateCount = (productId, count) => {
-    dispatch(updateCart({ idProduct: productId, count }));
-    alertify.success("Số lượng sản phẩm đã được cập nhật!");
-  };
+  // Handle item deletion from cart
+  const onDeleteCart = async (productId) => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      alertify.error("You need to log in to delete items from your cart.");
+      return;
+    }
 
-  // Hàm điều hướng đến trang Checkout
-  const proceedToCheckout = () => {
-    if (cart.length === 0) {
-      alertify.warning("Giỏ hàng của bạn hiện tại không có sản phẩm!");
-    } else {
-      history.push("/checkout"); // Sử dụng history.push thay vì navigate
+    try {
+      await apiClient.cartsDELETE(productId, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCart((prevCart) => {
+        const updatedCart = prevCart.filter(
+          (item) => item.productId !== productId
+        );
+        calculateTotal(updatedCart);
+        return updatedCart;
+      });
+      alertify.success("Product removed from cart.");
+    } catch (error) {
+      console.error("Error deleting cart item:", error);
+      alertify.error("Failed to remove item from cart. Please try again.");
     }
   };
+
+  // Navigate to Checkout
+  const proceedToCheckout = () => {
+    if (cart.length === 0) {
+      alertify.warning("Your cart is empty!");
+    } else {
+      history.push("/checkout");
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
     <div className="container">
@@ -75,11 +117,18 @@ function Cart() {
         <h2 className="h5 text-uppercase mb-4">Shopping cart</h2>
         <div className="row">
           <div className="col-lg-8 mb-4 mb-lg-0">
-            {/* Component hiển thị danh sách sản phẩm trong giỏ hàng */}
             <ListCart
               listCart={cart}
-              onDeleteCart={onDeleteCart}
-              onUpdateCount={onUpdateCount}
+              onDeleteCart={onDeleteCart} // Pass down delete handler
+              onUpdateCount={(productId, quantity) => {
+                // Function to update quantity if needed
+                setCart((prevCart) =>
+                  prevCart.map((item) =>
+                    item.productId === productId ? { ...item, quantity } : item
+                  )
+                );
+                calculateTotal(cart);
+              }}
             />
             <div className="bg-light px-4 py-3">
               <div className="row align-items-center text-center">
@@ -93,7 +142,6 @@ function Cart() {
                   </Link>
                 </div>
                 <div className="col-md-6 text-md-right">
-                  {/* Khi người dùng nhấn vào nút này, sẽ điều hướng đến Checkout */}
                   <button
                     className="btn btn-outline-dark btn-sm"
                     onClick={proceedToCheckout}
