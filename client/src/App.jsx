@@ -34,10 +34,9 @@ function App() {
           <Route path="/shop" component={Shop} />
           <Route path="/payment/vnpay-return" component={VNPayReturn} />
           <Route path="/profile" component={Profile} />
+          <Route path="/chat" component={Chat} />
         </Switch>{" "}
       </BrowserRouter>
-
-      {/* <Chat /> */}
 
       <Footer />
     </div>
