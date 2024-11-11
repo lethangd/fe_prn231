@@ -61,6 +61,7 @@ import ManagePages from "../../pages/pages/ManagePages";
 import ManageTransactions from "../../pages/payment/ManageTransactions";
 import PaymentMethod from "../../pages/payment/PaymentMethod";
 import TransactionDetail from "../../pages/payment/TransactionDetail";
+import AdminChatPage from "../../pages/Chat/AdminChatPage.jsx";
 
 // Sorting and Comments
 
@@ -73,6 +74,10 @@ const routes = [
   {
     path: "/catalog/product/add",
     element: <AddProduct />,
+  },
+  {
+    path: "/chat",
+    element: <AdminChatPage />,
   },
   {
     path: "/catalog/product/manage",

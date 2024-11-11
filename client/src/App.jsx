@@ -30,10 +30,9 @@ function App() {
           <Route path="/checkout" component={Checkout} />{" "}
           <Route path="/history" component={History} />{" "}
           <Route path="/shop" component={Shop} />
+          <Route path="/chat" component={Chat} />
         </Switch>{" "}
       </BrowserRouter>
-
-      {/* <Chat /> */}
 
       <Footer />
     </div>

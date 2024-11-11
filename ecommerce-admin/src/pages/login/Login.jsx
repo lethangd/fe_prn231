@@ -77,7 +77,6 @@ const Login = () => {
             login({ accessToken: response.accessToken, role: userRole })
           );
 
-          // Redirect to Dashboard if role is "sale"
           if (userRole === "sale") {
             navigate("/"); // Chuyển hướng đến trang Dashboard
           }

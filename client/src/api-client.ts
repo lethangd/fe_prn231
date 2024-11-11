@@ -338,7 +338,7 @@ export class Client {
     protected processCategoryPOST(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
+        if (status === 200 || status === 201 || status === 204) {
             return response.text().then((_responseText) => {
             return;
             });
@@ -463,9 +463,6 @@ export class Client {
         return Promise.resolve<void>(null as any);
     }
 
-    /**
-     * @return OK
-     */
      /**
      * @return OK
      */
@@ -536,7 +533,6 @@ export class Client {
         }
         return Promise.resolve<void>(null as any);
     }
-
     /**
      * @return OK
      */
@@ -1119,10 +1115,11 @@ export class Client {
         let url_ = this.baseUrl + "/api/Order";
         url_ = url_.replace(/[?&]$/, "");
         let token = localStorage.getItem("accessToken");
+        let tokenAdmin = localStorage.getItem("tokenAdmin");
         let options_: RequestInit = {
             method: "GET",
             headers: {
-                "Authorization": token ? `Bearer ${token}` : "", 
+                "Authorization": tokenAdmin ? `Bearer ${tokenAdmin}` : `Bearer ${token}`, 
             }
         };
 
@@ -1154,11 +1151,11 @@ export class Client {
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
         let token = localStorage.getItem("accessToken");
-
+        let tokenAdmin = localStorage.getItem("tokenAdmin");
         let options_: RequestInit = {
             method: "GET",
             headers: {
-                "Authorization": token ? `Bearer ${token}` : "", 
+                "Authorization": tokenAdmin ? `Bearer ${tokenAdmin}` : `Bearer ${token}`, 
             }
         };
 
@@ -1216,6 +1213,45 @@ export class Client {
         return Promise.resolve<void>(null as any);
     }
 
+    orderPUT(id: number, status: string): Promise<void> {
+        let url_ = this.baseUrl + "/api/Order/{id}/{status}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        if (status === undefined || status === null)
+            throw new Error("The parameter 'status' must be defined.");
+        url_ = url_.replace("{status}", encodeURIComponent("" + status));
+        url_ = url_.replace(/[?&]$/, "");
+        let token = localStorage.getItem("accessToken");
+        let tokenAdmin = localStorage.getItem("tokenAdmin");
+
+        let options_: RequestInit = {
+            method: "PUT",
+            headers: {
+                "Authorization": tokenAdmin ? `Bearer ${tokenAdmin}` : `Bearer ${token}`, 
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processOrderPUT(_response);
+        });
+    }
+
+    protected processOrderPUT(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+    
     /**
      * @param searchPhrase (optional) 
      * @param categoryId (optional) 
@@ -1317,10 +1353,8 @@ export class Client {
     protected processProductPOST(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            return;
-            });
+        if (status === 200 || status === 201 || status === 204) {
+            return response.json();
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -1506,7 +1540,7 @@ export class Client {
     protected processImagesPOST(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
+        if (status === 200 || status === 201 || status === 204) {
             return response.text().then((_responseText) => {
             return;
             });
@@ -1711,7 +1745,7 @@ export class Client {
     protected processVariantsPOST(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
+        if (status === 200 || status === 201 || status === 204) {
             return response.text().then((_responseText) => {
             return;
             });
@@ -1761,6 +1795,34 @@ export class Client {
         return Promise.resolve<void>(null as any);
     }
 
+    reviewsGETAll(): Promise<void> {
+        let url_ = this.baseUrl + "/api/Reviews";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processReviewsGETAll(_response);
+        });
+    }
+
+    protected processReviewsGETAll(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.json();
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+    
     /**
      * @return OK
      */
@@ -1977,7 +2039,37 @@ export class Client {
         }
         return Promise.resolve<void>(null as any);
     }
+    
+    role(): Promise<void> {
+        let url_ = this.baseUrl + "/api/users/role";
+        url_ = url_.replace(/[?&]$/, "");
+        let tokenAdmin = localStorage.getItem("tokenAdmin");
+        let token = localStorage.getItem("accessToken");
 
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Authorization": tokenAdmin ? `Bearer ${tokenAdmin}` : `Bearer ${token}`, 
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRole(_response);
+        });
+    }
+
+    protected processRole(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.json();
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
     /**
      * @param body (optional) 
      * @return OK
@@ -2282,6 +2374,7 @@ export interface ICreateAddressCommand {
 export class CreateCategoryCommand implements ICreateCategoryCommand {
     name?: string | undefined;
     description?: string | undefined;
+    parentId?: number | undefined;
 
     constructor(data?: ICreateCategoryCommand) {
         if (data) {
@@ -2296,6 +2389,7 @@ export class CreateCategoryCommand implements ICreateCategoryCommand {
         if (_data) {
             this.name = _data["name"];
             this.description = _data["description"];
+            this.parentId = _data["parentId"];
         }
     }
 
@@ -2310,6 +2404,7 @@ export class CreateCategoryCommand implements ICreateCategoryCommand {
         data = typeof data === 'object' ? data : {};
         data["name"] = this.name;
         data["description"] = this.description;
+        data["parentId"] = this.parentId;
         return data;
     }
 }

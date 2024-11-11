@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import * as Icons from 'react-icons/tb';
-import { useDispatch } from 'react-redux';
-import Logo from '../../images/common/logo.svg';
-import { Link, NavLink } from 'react-router-dom';
-import navigation from '../../api/navigation.jsx';
-import {logout} from '../../store/slices/authenticationSlice.jsx';
+import { useState } from "react";
+import * as Icons from "react-icons/tb";
+import { useDispatch } from "react-redux";
+import { Link, NavLink } from "react-router-dom";
+import navigation from "../../api/navigation.jsx";
+import { logout } from "../../store/slices/authenticationSlice.jsx";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -20,11 +19,11 @@ const Sidebar = () => {
   };
 
   const handleIsLogout = () => {
-    dispatch(logout())
+    dispatch(logout());
   };
 
   return (
-    <div className={`sidemenu ${sidebar ? 'active' : ''}`}>
+    <div className={`sidemenu ${sidebar ? "active" : ""}`}>
       {/* Admin User */}
       <div className="sidebar_profile">
         {/*<Link to="/" className="logo">
@@ -33,7 +32,7 @@ const Sidebar = () => {
 
         <h2 className="logo_text">Your Logo</h2>
         <Link className="navbar_icon menu_sidebar" onClick={handleSidebar}>
-          <Icons.TbChevronsLeft className={`${sidebar ? 'active' : ''}`} />
+          <Icons.TbChevronsLeft className={`${sidebar ? "active" : ""}`} />
         </Link>
       </div>
       {/* menu links */}
@@ -44,24 +43,27 @@ const Sidebar = () => {
               {!navigationItem.subMenu ? (
                 <NavLink
                   to={`${navigationItem.url}`}
-                  className={`menu_link ${toggle === key ? 'active' : ''}`}
+                  className={`menu_link ${toggle === key ? "active" : ""}`}
                   onClick={() => handleManu(key)}
                 >
                   {navigationItem.icon}
                   <span>{navigationItem.name}</span>
-                  {navigationItem.subMenu ? <Icons.TbChevronDown /> : ''}
+                  {navigationItem.subMenu ? <Icons.TbChevronDown /> : ""}
                 </NavLink>
               ) : (
                 <div className="menu_link" onClick={() => handleManu(key)}>
                   {navigationItem.icon}
                   <span>{navigationItem.name}</span>
-                  {navigationItem.subMenu ? <Icons.TbChevronDown /> : ''}
+                  {navigationItem.subMenu ? <Icons.TbChevronDown /> : ""}
                 </div>
               )}
               {navigationItem.subMenu ? (
-                <ul className={`sub_menu ${toggle === key ? 'active' : ''}`}>
+                <ul className={`sub_menu ${toggle === key ? "active" : ""}`}>
                   {navigationItem.subMenu &&
-                    navigationItem.subMenu.map(function (subNavigationItem, subKey) {
+                    navigationItem.subMenu.map(function (
+                      subNavigationItem,
+                      subKey
+                    ) {
                       return (
                         <li key={subKey}>
                           <NavLink
@@ -70,22 +72,23 @@ const Sidebar = () => {
                           >
                             {subNavigationItem.icon}
                             <span>{subNavigationItem.name}</span>
-                            {subNavigationItem.subMenu ? <Icons.TbChevronDown /> : ''}
+                            {subNavigationItem.subMenu ? (
+                              <Icons.TbChevronDown />
+                            ) : (
+                              ""
+                            )}
                           </NavLink>
                         </li>
                       );
                     })}
                 </ul>
               ) : (
-                ''
+                ""
               )}
             </li>
           );
         })}
-        <div
-          className={`menu_link`}
-          onClick={handleIsLogout}
-        >
+        <div className={`menu_link`} onClick={handleIsLogout}>
           <Icons.TbLogout className="menu_icon" />
           <span>Logout</span>
         </div>

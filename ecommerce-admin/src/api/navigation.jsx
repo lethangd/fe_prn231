@@ -15,6 +15,11 @@ const navigation = (() => {
         url: "/orders/manage",
         icon: <Icons.TbChecklist className="menu_icon" />,
       },
+      {
+        name: "Chat",
+        url: "/chat",
+        icon: <Icons.TbUsers className="menu_icon" />,
+      },
     ];
   }
   return [

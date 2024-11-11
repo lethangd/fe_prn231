@@ -1,5 +1,5 @@
 // src/components/CustomerChat.js
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import ChatService from "./signalRService";
 
 const Chat = ({ conversationId }) => {
