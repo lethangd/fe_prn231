@@ -463,10 +463,10 @@ export class Client {
         return Promise.resolve<void>(null as any);
     }
 
-    /**
+     /**
      * @return OK
      */
-    conversationGET(): Promise<void> {
+     conversationGET(): Promise<void> {
         let url_ = this.baseUrl + "/api/Conversation";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -533,7 +533,6 @@ export class Client {
         }
         return Promise.resolve<void>(null as any);
     }
-
     /**
      * @return OK
      */

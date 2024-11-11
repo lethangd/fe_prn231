@@ -466,7 +466,10 @@ export class Client {
     /**
      * @return OK
      */
-    conversationGET(): Promise<void> {
+     /**
+     * @return OK
+     */
+     conversationGET(): Promise<void> {
         let url_ = this.baseUrl + "/api/Conversation";
         url_ = url_.replace(/[?&]$/, "");
 
