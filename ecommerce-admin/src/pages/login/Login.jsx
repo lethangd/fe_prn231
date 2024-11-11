@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import * as Icons from "react-icons/tb";
 import { useDispatch } from "react-redux";
 import Logo from "../../images/common/logo-dark.svg";
@@ -12,6 +12,7 @@ import { Client, LoginRequest } from "../api-client";
 const Login = () => {
   const dispatch = useDispatch();
   const apiClient = new Client();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -57,8 +58,30 @@ const Login = () => {
       if (response.accessToken) {
         localStorage.setItem("tokenAdmin", response.accessToken);
 
-        // Dispatch login action to update Redux
-        dispatch(login(response.accessToken));
+        // Fetch user roles
+        const roles = await apiClient.role(); // Giả sử bạn có hàm role() để lấy vai trò
+
+        // Determine and store user role
+        let userRole = null;
+        if (roles.includes("Admin")) {
+          userRole = "admin";
+        } else if (roles.includes("Sale")) {
+          userRole = "sale";
+        }
+
+        if (userRole) {
+          localStorage.setItem("userRole", userRole);
+
+          // Dispatch login action to update Redux
+          dispatch(
+            login({ accessToken: response.accessToken, role: userRole })
+          );
+
+          // Redirect to Dashboard if role is "sale"
+          if (userRole === "sale") {
+            navigate("/"); // Chuyển hướng đến trang Dashboard
+          }
+        }
       }
     } catch (error) {
       console.error("Login error:", error);

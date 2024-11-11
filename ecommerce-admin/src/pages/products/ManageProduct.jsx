@@ -82,111 +82,117 @@ const ManageProduct = () => {
     <section className="products">
       <div className="container">
         <div className="wrapper">
-          <div className="content_head">
-            <Button
-              label="Advance Filter"
-              className="sm"
-              icon={<Icons.TbFilter />}
-              onClick={handleToggleOffcanvas}
-            />
-            <Input
-              placeholder="Search Product by Name..."
-              className="sm table_search"
-              value={fields.name}
-              onChange={(value) => handleInputChange("name", value)}
-            />
-          </div>
+          <div className="content transparent">
+            <div className="content_head">
+              <Button
+                label="Advance Filter"
+                className="sm"
+                icon={<Icons.TbFilter />}
+                onClick={handleToggleOffcanvas}
+              />
+              <Input
+                placeholder="Search Product by Name..."
+                className="sm table_search"
+                value={fields.name}
+                onChange={(value) => handleInputChange("name", value)}
+              />
+            </div>
 
-          {/* Offcanvas for Advanced Search */}
-          <Offcanvas isOpen={isOffcanvasOpen} onClose={handleToggleOffcanvas}>
-            <div className="offcanvas-head">
-              <h2>Advanced Search</h2>
-            </div>
-            <div className="offcanvas-body">
-              <div className="column">
-                <Input
-                  type="text"
-                  label="Product Name"
-                  value={fields.name}
-                  onChange={(value) => handleInputChange("name", value)}
-                  placeholder="Enter product name"
-                />
+            {/* Offcanvas for Advanced Search */}
+            <Offcanvas isOpen={isOffcanvasOpen} onClose={handleToggleOffcanvas}>
+              <div className="offcanvas-head">
+                <h2>Advanced Search</h2>
               </div>
-              <div className="column">
-                <Dropdown
-                  options={categories.map((cat) => ({
-                    value: cat.id,
-                    label: cat.name,
-                  }))}
-                  placeholder="Select Category"
-                  label="Category"
-                  selectedValue={
-                    fields.category ? { label: fields.category.name } : null
-                  }
-                  onClick={(selectedCategory) =>
-                    handleInputChange("category", selectedCategory)
-                  }
-                />
+              <div className="offcanvas-body">
+                <div className="column">
+                  <Input
+                    type="text"
+                    label="Product Name"
+                    value={fields.name}
+                    onChange={(value) => handleInputChange("name", value)}
+                    placeholder="Enter product name"
+                  />
+                </div>
+                <div className="column">
+                  <Dropdown
+                    options={categories.map((cat) => ({
+                      value: cat.id,
+                      label: cat.name,
+                    }))}
+                    placeholder="Select Category"
+                    label="Category"
+                    selectedValue={
+                      fields.category ? { label: fields.category.name } : null
+                    }
+                    onClick={(selectedCategory) =>
+                      handleInputChange("category", selectedCategory)
+                    }
+                  />
+                </div>
+                <div className="column">
+                  <RangeSlider
+                    label="Price Range"
+                    values={fields.priceRange}
+                    onValuesChange={handleSliderChange}
+                  />
+                </div>
               </div>
-              <div className="column">
-                <RangeSlider
-                  label="Price Range"
-                  values={fields.priceRange}
-                  onValuesChange={handleSliderChange}
-                />
+              <div className="offcanvas-footer">
+                <Button label="Apply Filter" onClick={applyFilter} />
               </div>
-            </div>
-            <div className="offcanvas-footer">
-              <Button label="Apply Filter" onClick={applyFilter} />
-            </div>
-          </Offcanvas>
+            </Offcanvas>
 
-          {/* Products Table */}
-          <div className="content_body">
-            <table className="table_responsive">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Image</th>
-                  <th>Name</th>
-                  <th>Price</th>
-                  <th>Brand</th>
-                  <th>Stock Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product.id}>
-                    <td>{product.id}</td>
-                    <td>
-                      <img src={product.image} alt={product.name} width="50" />
-                    </td>
-                    <td>{product.name}</td>
-                    <td>{product.price}</td>
-                    <td>{product.brand}</td>
-                    <td>{product.inStock ? "In Stock" : "Out of Stock"}</td>
-                    <td>
-                      <TableAction
-                        actionItems={["Edit", "Delete"]}
-                        onActionItemClick={(action) => {
-                          if (action === "Edit")
-                            navigate(`/catalog/product/manage/${product.id}`);
-                        }}
-                      />
-                    </td>
+            {/* Products Table */}
+            <div className="content_body">
+              <table className="table_responsive">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Brand</th>
+                    <th>Stock Status</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {products.map((product) => (
+                    <tr key={product.id}>
+                      <td>{product.id}</td>
+                      <td>
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          width="50"
+                        />
+                      </td>
+                      <td>{product.name}</td>
+                      <td>{product.price}</td>
+                      <td>{product.brand}</td>
+                      <td>{product.inStock ? "In Stock" : "Out of Stock"}</td>
+                      <td>
+                        <TableAction
+                          actionItems={["Edit", "Delete"]}
+                          onActionItemClick={(action) => {
+                            if (action === "Edit")
+                              navigate(`/catalog/product/manage/${product.id}`);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          {/* Pagination */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={5}
-            onPageChange={(page) => setCurrentPage(page)}
-          />
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={5}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
+          </div>
         </div>
       </div>
     </section>

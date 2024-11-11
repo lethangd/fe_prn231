@@ -18,7 +18,7 @@ const Layout = () => {
     if (!isAuthenticated) {
       navigate("/login");
     } else {
-      navigate("/catalog/product/manage");
+      navigate("/");
     }
   }, [isAuthenticated]);
 
