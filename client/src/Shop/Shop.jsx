@@ -18,8 +18,8 @@ function Shop() {
     page: 1,
     count: 9,
     search: "",
-    categoryId: null,
-    sortBy: "default",
+    categoryId: undefined,
+    sortBy: "",
   });
 
   const apiClient = new Client();
@@ -170,7 +170,7 @@ function Shop() {
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        handlerCategory(null);
+                        handlerCategory(undefined);
                       }}
                     >
                       All
