@@ -62,10 +62,13 @@ export class Client {
     addressesGET(): Promise<void> {
         let url_ = this.baseUrl + "/api/Addresses";
         url_ = url_.replace(/[?&]$/, "");
+        let token = localStorage.getItem("accessToken");
+
 
         let options_: RequestInit = {
             method: "GET",
             headers: {
+                "Authorization": token ? `Bearer ${token}` : "", 
             }
         };
 
@@ -175,12 +178,15 @@ export class Client {
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(body);
+        let token = localStorage.getItem("accessToken");
 
         let options_: RequestInit = {
             body: content_,
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : "", 
+
             }
         };
 
@@ -210,10 +216,12 @@ export class Client {
     cartsGET(): Promise<void> {
         let url_ = this.baseUrl + "/api/Carts";
         url_ = url_.replace(/[?&]$/, "");
+        let token = localStorage.getItem("accessToken");
 
         let options_: RequestInit = {
             method: "GET",
             headers: {
+                "Authorization": token ? `Bearer ${token}` : "", 
             }
         };
 
@@ -226,9 +234,7 @@ export class Client {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
-            return response.text().then((_responseText) => {
-            return;
-            });
+            return response.json()
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -246,10 +252,12 @@ export class Client {
             throw new Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
+        let token = localStorage.getItem("accessToken");
 
         let options_: RequestInit = {
             method: "DELETE",
             headers: {
+                "Authorization": token ? `Bearer ${token}` : "", 
             }
         };
 
@@ -1069,7 +1077,7 @@ export class Client {
     orderPOST(body: CreateOrderCommand | undefined): Promise<void> {
         let url_ = this.baseUrl + "/api/Order";
         url_ = url_.replace(/[?&]$/, "");
-
+        let token = localStorage.getItem("accessToken");
         const content_ = JSON.stringify(body);
 
         let options_: RequestInit = {
@@ -1077,6 +1085,7 @@ export class Client {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : "", 
             }
         };
 
@@ -1088,7 +1097,7 @@ export class Client {
     protected processOrderPOST(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
+        if (status === 200 || status === 204|| status === 201) {
             return response.text().then((_responseText) => {
             return;
             });
@@ -1106,10 +1115,11 @@ export class Client {
     orderGET(): Promise<void> {
         let url_ = this.baseUrl + "/api/Order";
         url_ = url_.replace(/[?&]$/, "");
-
+        let token = localStorage.getItem("accessToken");
         let options_: RequestInit = {
             method: "GET",
             headers: {
+                "Authorization": token ? `Bearer ${token}` : "", 
             }
         };
 
@@ -1122,9 +1132,7 @@ export class Client {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
-            return response.text().then((_responseText) => {
-            return;
-            });
+            return response.json();
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -1142,10 +1150,12 @@ export class Client {
             throw new Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
+        let token = localStorage.getItem("accessToken");
 
         let options_: RequestInit = {
             method: "GET",
             headers: {
+                "Authorization": token ? `Bearer ${token}` : "", 
             }
         };
 
@@ -1158,9 +1168,7 @@ export class Client {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
-            return response.text().then((_responseText) => {
-            return;
-            });
+            return response.json();
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -1507,6 +1515,50 @@ export class Client {
         return Promise.resolve<void>(null as any);
     }
 
+    variantsAll(productId: number): Promise<ProductVariantDTO[]> {
+        let url_ = this.baseUrl + "/api/products/{productId}/variants";
+        if (productId === undefined || productId === null)
+            throw new Error("The parameter 'productId' must be defined.");
+        url_ = url_.replace("{productId}", encodeURIComponent("" + productId));
+        url_ = url_.replace(/[?&]$/, "");
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "text/plain",
+
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processVariantsAll(_response);
+        });
+    }
+
+    protected processVariantsAll(response: Response): Promise<ProductVariantDTO[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(ProductVariantDTO.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ProductVariantDTO[]>(null as any);
+    }
+
     /**
      * @return OK
      */
@@ -1535,9 +1587,7 @@ export class Client {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
-            return response.text().then((_responseText) => {
-            return;
-            });
+            return response.json();
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -2812,6 +2862,58 @@ export interface IOrderItemDTO {
     productId?: number;
     quantity?: number;
     price?: number;
+}
+
+export class ProductVariantDTO implements IProductVariantDTO {
+    id?: number;
+    sku?: string | undefined;
+    price?: number;
+    salePrice?: number | undefined;
+    isDeleted?: boolean;
+
+    constructor(data?: IProductVariantDTO) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.sku = _data["sku"];
+            this.price = _data["price"];
+            this.salePrice = _data["salePrice"];
+            this.isDeleted = _data["isDeleted"];
+        }
+    }
+
+    static fromJS(data: any): ProductVariantDTO {
+        data = typeof data === 'object' ? data : {};
+        let result = new ProductVariantDTO();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["sku"] = this.sku;
+        data["price"] = this.price;
+        data["salePrice"] = this.salePrice;
+        data["isDeleted"] = this.isDeleted;
+        return data;
+    }
+}
+
+export interface IProductVariantDTO {
+    id?: number;
+    sku?: string | undefined;
+    price?: number;
+    salePrice?: number | undefined;
+    isDeleted?: boolean;
 }
 
 export class RefreshRequest implements IRefreshRequest {

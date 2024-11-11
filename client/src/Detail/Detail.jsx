@@ -1,4 +1,3 @@
-// components/Detail.js
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import alertify from "alertifyjs";
@@ -7,7 +6,7 @@ import { Client, AddToCartCommand, CreateReviewCommand } from "../api-client"; /
 
 function Detail() {
   const [detail, setDetail] = useState(null);
-  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [selectedVariant, setSelectedVariant] = useState(null); // State for the first ProductVariant
   const [quantity, setQuantity] = useState(1);
   const [reviewTab, setReviewTab] = useState("description");
   const [loading, setLoading] = useState(true);
@@ -26,6 +25,13 @@ function Detail() {
         setLoading(true);
         const productDetail = await apiClient.productGET2(Number(id));
         setDetail(productDetail);
+
+        // Fetch and set the first variant
+        const variants = await apiClient.variantsAll(Number(id));
+        if (variants.length > 0) {
+          setSelectedVariant(variants[0]); // Set the first variant as selected
+        }
+
         setLoading(false);
       } catch (error) {
         console.error("Error fetching product details:", error);
@@ -59,9 +65,9 @@ function Detail() {
 
   // Add product to cart
   const addToCart = async () => {
-    if (detail && detail.productId) {
+    if (selectedVariant && selectedVariant.id) {
       const addToCartCommand = new AddToCartCommand({
-        productVariantId: detail.productId,
+        productVariantId: selectedVariant.id,
         quantity,
       });
 
@@ -98,7 +104,6 @@ function Detail() {
     }
   };
 
-  // Loading or error state handling
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="alert alert-danger">{error}</div>;
 
@@ -110,14 +115,17 @@ function Detail() {
             <img
               className="d-block w-100"
               src={detail.image}
-              alt={detail.productName}
+              alt={detail.name}
             />
           </div>
 
           <div className="col-lg-6">
-            <h1>{detail.productName}</h1>
+            <h1>{detail.name}</h1>
             <p className="text-muted lead">
-              {convertMoney(detail.listPrice)} VND
+              {convertMoney(
+                selectedVariant ? selectedVariant.price : detail.price
+              )}{" "}
+              VND
             </p>
 
             <div className="row align-items-stretch mb-4">

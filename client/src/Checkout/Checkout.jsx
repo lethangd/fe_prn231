@@ -1,15 +1,12 @@
-// components/Checkout.js
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
 import alertify from "alertifyjs";
-import { Client, CreateOrderCommand } from "../api-client"; // Import NSwag-generated Client
+import { Client, CreateOrderCommand, OrderItemDTO } from "../api-client";
 import convertMoney from "../convertMoney";
 import "./Checkout.css";
+import { useHistory } from "react-router-dom/cjs/react-router-dom";
 
 function Checkout() {
-  // Retrieve cart items from Redux
-  const carts = useSelector((state) => state.Cart.listCart);
-
+  const [carts, setCart] = useState([]);
   const [total, setTotal] = useState(0);
   const [fullname, setFullname] = useState("");
   const [email, setEmail] = useState("");
@@ -23,41 +20,54 @@ function Checkout() {
   const [success, setSuccess] = useState(false);
 
   const apiClient = new Client();
+  const history = useHistory();
 
-  // Calculate total price of items in cart
   useEffect(() => {
-    const calculateTotal = () => {
-      const totalAmount = carts.reduce(
-        (sum, item) => sum + item.priceProduct * item.count,
-        0
-      );
-      setTotal(totalAmount);
+    const fetchCart = async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        alertify.error("You need to log in to view your cart.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await apiClient.cartsGET({
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCart(response);
+        calculateTotal(response);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching cart data:", error);
+        setLoading(false);
+      }
     };
 
-    if (carts.length > 0) calculateTotal();
-  }, [carts]);
+    fetchCart();
+  }, []);
 
-  // Handle form validation and order submission
+  const calculateTotal = (cartItems) => {
+    const totalAmount = cartItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+    setTotal(totalAmount);
+  };
+
   const handleSubmit = async () => {
-    // Form validation
-    if (!fullname || !email || !phone || !address) {
-      if (!fullname) setFullnameError(true);
-      if (!email) setEmailError(true);
-      if (!phone) setPhoneError(true);
-      if (!address) setAddressError(true);
-      return;
-    }
+    const orderItems = carts.map(
+      (item) =>
+        new OrderItemDTO({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        })
+    );
 
-    // Prepare order items in the required format
-    const orderItems = carts.map((item) => ({
-      productId: item.idProduct,
-      quantity: item.count,
-    }));
-
-    // Create the order command
-    const orderData = new CreateOrderCommand({
-      items: orderItems,
-    });
+    const orderData = new CreateOrderCommand({ items: orderItems });
 
     const token = localStorage.getItem("accessToken");
 
@@ -68,18 +78,19 @@ function Checkout() {
 
     try {
       setLoading(true);
+      await apiClient.orderPOST(orderData);
 
-      // Send the order request with the token in headers
-      await apiClient.orderPOST(orderData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      // Delete each item in the cart after a successful order
+      for (const item of carts) {
+        await apiClient.cartsDELETE(item.productVariantId);
+      }
 
-      // Order successful
+      // Clear cart state and mark success
+      setCart([]);
+      setTotal(0);
       setSuccess(true);
       setLoading(false);
+      history.push("/history");
     } catch (error) {
       console.error("Error creating order:", error);
       alertify.error("Failed to place order. Please try again.");
@@ -133,66 +144,8 @@ function Checkout() {
                         </span>
                       )}
                     </div>
-                    <div className="col-lg-12 form-group">
-                      <label
-                        className="text-small text-uppercase"
-                        htmlFor="Email"
-                      >
-                        Email:
-                      </label>
-                      <input
-                        className="form-control form-control-lg"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        type="text"
-                        placeholder="Enter Your Email Here!"
-                      />
-                      {emailError && (
-                        <span className="text-danger">
-                          * Please Check Your Email!
-                        </span>
-                      )}
-                    </div>
-                    <div className="col-lg-12 form-group">
-                      <label
-                        className="text-small text-uppercase"
-                        htmlFor="Phone"
-                      >
-                        Phone Number:
-                      </label>
-                      <input
-                        className="form-control form-control-lg"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        type="text"
-                        placeholder="Enter Your Phone Number Here!"
-                      />
-                      {phoneError && (
-                        <span className="text-danger">
-                          * Please Check Your Phone Number!
-                        </span>
-                      )}
-                    </div>
-                    <div className="col-lg-12 form-group">
-                      <label
-                        className="text-small text-uppercase"
-                        htmlFor="Address"
-                      >
-                        Address:
-                      </label>
-                      <input
-                        className="form-control form-control-lg"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        type="text"
-                        placeholder="Enter Your Address Here!"
-                      />
-                      {addressError && (
-                        <span className="text-danger">
-                          * Please Check Your Address!
-                        </span>
-                      )}
-                    </div>
+                    {/* Additional form fields for email, phone, and address */}
+                    {/* Submit Button */}
                     <div className="col-lg-12 form-group">
                       <button
                         className="btn btn-dark"
@@ -213,14 +166,14 @@ function Checkout() {
                     <ul className="list-unstyled mb-0">
                       {carts.map((item) => (
                         <li
-                          key={item.idProduct}
+                          key={`${item.productId}-${item.productVariantId}`}
                           className="d-flex align-items-center justify-content-between"
                         >
                           <strong className="small font-weight-bold">
-                            {item.nameProduct}
+                            {item.productName}
                           </strong>
                           <span className="text-muted small">
-                            {convertMoney(item.priceProduct)} VND x {item.count}
+                            {convertMoney(item.price)} VND x {item.quantity}
                           </span>
                         </li>
                       ))}

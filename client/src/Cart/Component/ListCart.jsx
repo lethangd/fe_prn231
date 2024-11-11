@@ -1,191 +1,135 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
-import convertMoney from '../../convertMoney';
+import React from "react";
+import PropTypes from "prop-types";
+import { Link } from "react-router-dom";
+import convertMoney from "../../convertMoney";
 
 ListCart.propTypes = {
-	listCart: PropTypes.array,
-	onDeleteCart: PropTypes.func,
-	onUpdateCount: PropTypes.func,
+  listCart: PropTypes.array,
+  onDeleteCart: PropTypes.func,
+  onUpdateCount: PropTypes.func,
 };
 
 ListCart.defaultProps = {
-	listCart: [],
-	onDeleteCart: null,
-	onUpdateCount: null,
+  listCart: [],
+  onDeleteCart: null,
+  onUpdateCount: null,
 };
 
-function ListCart(props) {
-	const { listCart, onDeleteCart, onUpdateCount } = props;
+function ListCart({ listCart, onDeleteCart, onUpdateCount }) {
+  const handleDelete = (itemId) => {
+    if (onDeleteCart) onDeleteCart(itemId);
+  };
 
-	const handlerChangeText = (e) => {
-		console.log(e.target.value);
-	};
+  const handleQuantityChange = (productId, quantity, action) => {
+    if (!onUpdateCount) return;
+    const updatedQuantity = action === "increase" ? quantity + 1 : quantity - 1;
+    if (updatedQuantity > 0) onUpdateCount(productId, updatedQuantity);
+  };
 
-	const handlerDelete = (getUser, getProduct) => {
-		if (!onDeleteCart) {
-			return;
-		}
-
-		onDeleteCart(getUser, getProduct);
-	};
-
-	const handlerDown = (getIdUser, getIdProduct, getCount) => {
-		if (!onUpdateCount) {
-			return;
-		}
-
-		if (getCount === 1) {
-			return;
-		}
-
-		//Trước khi trả dữ liệu về component cha thì phải thay đổi biến count
-		const updateCount = parseInt(getCount) - 1;
-
-		onUpdateCount(getIdUser, getIdProduct, updateCount);
-	};
-
-	const handlerUp = (getIdUser, getIdProduct, getCount) => {
-		if (!onUpdateCount) {
-			return;
-		}
-
-		//Trước khi trả dữ liệu về component cha thì phải thay đổi biến count
-		const updateCount = parseInt(getCount) + 1;
-
-		onUpdateCount(getIdUser, getIdProduct, updateCount);
-	};
-
-	return (
-		<div className='table-responsive mb-4'>
-			<table className='table'>
-				<thead className='bg-light'>
-					<tr className='text-center'>
-						<th className='border-0' scope='col'>
-							{' '}
-							<strong className='text-small text-uppercase'>
-								Image
-							</strong>
-						</th>
-						<th className='border-0' scope='col'>
-							{' '}
-							<strong className='text-small text-uppercase'>
-								Product
-							</strong>
-						</th>
-						<th className='border-0' scope='col'>
-							{' '}
-							<strong className='text-small text-uppercase'>
-								Price
-							</strong>
-						</th>
-						<th className='border-0' scope='col'>
-							{' '}
-							<strong className='text-small text-uppercase'>
-								Quantity
-							</strong>
-						</th>
-						<th className='border-0' scope='col'>
-							{' '}
-							<strong className='text-small text-uppercase'>
-								Total
-							</strong>
-						</th>
-						<th className='border-0' scope='col'>
-							{' '}
-							<strong className='text-small text-uppercase'>
-								Remove
-							</strong>
-						</th>
-					</tr>
-				</thead>
-				<tbody>
-					{listCart &&
-						listCart.map((value, index) => (
-							<tr className='text-center' key={index}>
-								<td className='pl-0 border-0'>
-									<div className='media align-items-center justify-content-center'>
-										<Link
-											className='reset-anchor d-block animsition-link'
-											to={`/detail/${value.idProduct}`}>
-											<img src={value.img} alt='...' width='70' />
-										</Link>
-									</div>
-								</td>
-								<td className='align-middle border-0'>
-									<div className='media align-items-center justify-content-center'>
-										<Link
-											className='reset-anchor h6 animsition-link'
-											to={`/detail/${value.idProduct}`}>
-											{value.nameProduct}
-										</Link>
-									</div>
-								</td>
-
-								<td className='align-middle border-0'>
-									<p className='mb-0 small'>
-										{convertMoney(value.priceProduct)} VND
-									</p>
-								</td>
-								<td className='align-middle border-0'>
-									<div className='quantity justify-content-center'>
-										<button
-											className='dec-btn p-0'
-											style={{ cursor: 'pointer' }}
-											onClick={() =>
-												handlerDown(
-													value.idUser,
-													value.idProduct,
-													value.count
-												)
-											}>
-											<i className='fas fa-caret-left'></i>
-										</button>
-										<input
-											className='form-control form-control-sm border-0 shadow-0 p-0'
-											type='text'
-											value={value.count}
-											onChange={handlerChangeText}
-										/>
-										<button
-											className='inc-btn p-0'
-											style={{ cursor: 'pointer' }}
-											onClick={() =>
-												handlerUp(
-													value.idUser,
-													value.idProduct,
-													value.count
-												)
-											}>
-											<i className='fas fa-caret-right'></i>
-										</button>
-									</div>
-								</td>
-								<td className='align-middle border-0'>
-									<p className='mb-0 small'>
-										{convertMoney(
-											parseInt(value.priceProduct) *
-												parseInt(value.count)
-										)}{' '}
-										VND
-									</p>
-								</td>
-								<td className='align-middle border-0'>
-									<a
-										className='reset-anchor remove_cart'
-										style={{ cursor: 'pointer' }}
-										onClick={() =>
-											handlerDelete(value.idUser, value.idProduct)
-										}>
-										<i className='fas fa-trash-alt small text-muted'></i>
-									</a>
-								</td>
-							</tr>
-						))}
-				</tbody>
-			</table>
-		</div>
-	);
+  return (
+    <div className="table-responsive mb-4">
+      <table className="table">
+        <thead className="bg-light">
+          <tr className="text-center">
+            <th className="border-0" scope="col">
+              <strong className="text-small text-uppercase">Image</strong>
+            </th>
+            <th className="border-0" scope="col">
+              <strong className="text-small text-uppercase">Product</strong>
+            </th>
+            <th className="border-0" scope="col">
+              <strong className="text-small text-uppercase">Price</strong>
+            </th>
+            <th className="border-0" scope="col">
+              <strong className="text-small text-uppercase">Quantity</strong>
+            </th>
+            <th className="border-0" scope="col">
+              <strong className="text-small text-uppercase">Total</strong>
+            </th>
+            <th className="border-0" scope="col">
+              <strong className="text-small text-uppercase">Remove</strong>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {listCart.map((item) => (
+            <tr className="text-center" key={item.id}>
+              <td className="pl-0 border-0">
+                <div className="media align-items-center justify-content-center">
+                  <Link
+                    className="reset-anchor d-block animsition-link"
+                    to={`/detail/${item.productId}`}
+                  >
+                    <img
+                      src={item.image || "/path/to/default-image.jpg"}
+                      alt={item.productName}
+                      width="70"
+                    />
+                  </Link>
+                </div>
+              </td>
+              <td className="align-middle border-0">
+                <div className="media align-items-center justify-content-center">
+                  <Link
+                    className="reset-anchor h6 animsition-link"
+                    to={`/detail/${item.productId}`}
+                  >
+                    {item.productName}
+                  </Link>
+                  <p className="small text-muted">{item.attributes}</p>
+                </div>
+              </td>
+              <td className="align-middle border-0">
+                <p className="mb-0 small">{convertMoney(item.price)} VND</p>
+              </td>
+              <td className="align-middle border-0">
+                <div className="quantity justify-content-center">
+                  <button
+                    className="dec-btn p-0"
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>
+                      handleQuantityChange(item.id, item.quantity, "decrease")
+                    }
+                  >
+                    <i className="fas fa-caret-left"></i>
+                  </button>
+                  <input
+                    className="form-control form-control-sm border-0 shadow-0 p-0"
+                    type="text"
+                    value={item.quantity}
+                    readOnly
+                  />
+                  <button
+                    className="inc-btn p-0"
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>
+                      handleQuantityChange(item.id, item.quantity, "increase")
+                    }
+                  >
+                    <i className="fas fa-caret-right"></i>
+                  </button>
+                </div>
+              </td>
+              <td className="align-middle border-0">
+                <p className="mb-0 small">
+                  {convertMoney(item.price * item.quantity)} VND
+                </p>
+              </td>
+              <td className="align-middle border-0">
+                <button
+                  className="reset-anchor remove_cart"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleDelete(item.id)}
+                >
+                  <i className="fas fa-trash-alt small text-muted"></i>
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 export default ListCart;
