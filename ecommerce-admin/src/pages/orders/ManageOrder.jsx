@@ -161,6 +161,8 @@ const ManageOrders = () => {
                             order.status.toLowerCase() === "out of stock" ||
                             order.status.toLowerCase() === "rejected" ||
                             order.status.toLowerCase() === "locked" ||
+                            order.status.toLowerCase() === "canceled" ||
+                            order.status.toLowerCase() === "confirmed" ||
                             order.status.toLowerCase() === "discontinued" ? (
                             <Badge
                               label={order.status}

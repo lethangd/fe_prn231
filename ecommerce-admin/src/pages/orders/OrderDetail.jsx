@@ -14,6 +14,7 @@ const OrderDetail = () => {
   const [order, setOrder] = useState(null);
   const [customerId, setCustomerId] = useState(null);
   const [products, setProducts] = useState([]);
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     fetchOrderDetails(orderID);
@@ -21,12 +22,11 @@ const OrderDetail = () => {
 
   const fetchOrderDetails = async (id) => {
     try {
-      // Fetch order details
       const orderData = await apiClient.orderGET2(id);
       setOrder(orderData);
-      setCustomerId(orderData.userId); // Set customer ID directly
-
+      setCustomerId(orderData.userId);
       setProducts(orderData.items);
+      setStatus(orderData.status);
     } catch (error) {
       console.error("Failed to fetch order details:", error);
     }
@@ -34,6 +34,26 @@ const OrderDetail = () => {
 
   const handleInvoice = () => {
     alert("Under Construction: Invoice page");
+  };
+
+  const handleCancelOrder = async () => {
+    try {
+      await apiClient.cancel(orderID);
+      alert(`Order ${orderID} has been canceled`);
+      fetchOrderDetails(orderID);
+    } catch (error) {
+      console.error("Failed to cancel order:", error);
+    }
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    try {
+      await apiClient.orderPUT(orderID, newStatus);
+      alert(`Order status updated to ${newStatus}`);
+      fetchOrderDetails(orderID);
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+    }
   };
 
   if (!order) return <div>Loading...</div>;
@@ -105,14 +125,27 @@ const OrderDetail = () => {
                   icon={<Icons.TbShoppingCartCancel />}
                   label="Cancel Order"
                   className="bg_light_danger sm"
+                  onClick={handleCancelOrder}
                 />
               </h2>
+              <select
+                className="dropdown_placeholder"
+                value={status}
+                onChange={(e) => handleStatusChange(e.target.value)}
+              >
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Shipping">Shipping</option>
+                <option value="Delivered">Delivered</option>
+              </select>
               <div className="order_status">
                 <div className="order_status_item">
                   <div className="order_status_icon">
                     {order.status === "Pending" && <Icons.TbChecklist />}
                     {order.status === "Processing" && <Icons.TbReload />}
-                    {order.status === "Shipped" && <Icons.TbTruckDelivery />}
+                    {order.status === "Confirmed" && <Icons.TbPackage />}
+                    {order.status === "Shipping" && <Icons.TbTruckDelivery />}
                     {order.status === "Delivered" && (
                       <Icons.TbShoppingBagCheck />
                     )}
