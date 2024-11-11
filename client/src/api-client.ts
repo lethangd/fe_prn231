@@ -27,12 +27,14 @@ export class Client {
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(body);
+        const token = localStorage.getItem("accessToken"); // Lấy token từ localStorage
 
         let options_: RequestInit = {
             body: content_,
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : "", // Thêm token vào header
             }
         };
 
@@ -43,14 +45,17 @@ export class Client {
 
     protected processAddressesPOST(response: Response): Promise<void> {
         const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
+        let _headers: any = {}; 
+        if (response.headers && response.headers.forEach) { 
+            response.headers.forEach((v: any, k: any) => _headers[k] = v); 
+        };
+        if (status === 200 || status === 201) { // Thêm status 201 cho Created
             return response.text().then((_responseText) => {
-            return;
+                return;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+                return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
         return Promise.resolve<void>(null as any);
@@ -64,7 +69,6 @@ export class Client {
         url_ = url_.replace(/[?&]$/, "");
         let token = localStorage.getItem("accessToken");
 
-
         let options_: RequestInit = {
             method: "GET",
             headers: {
@@ -77,19 +81,20 @@ export class Client {
         });
     }
 
-    protected processAddressesGET(response: Response): Promise<void> {
+    protected processAddressesGET(response: Response): Promise<any> { // Thay đổi return type
         const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        let _headers: any = {}; 
+        if (response.headers && response.headers.forEach) { 
+            response.headers.forEach((v: any, k: any) => _headers[k] = v); 
+        };
         if (status === 200) {
-            return response.text().then((_responseText) => {
-            return;
-            });
+            return response.json(); // Trả về dữ liệu JSON thay vì text
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+                return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve([]); // Trả về mảng rỗng nếu không có dữ liệu
     }
 
     /**
@@ -1727,7 +1732,7 @@ export class Client {
     reviewsPOST(body: CreateReviewCommand | undefined): Promise<void> {
         let url_ = this.baseUrl + "/api/Reviews";
         url_ = url_.replace(/[?&]$/, "");
-
+        const token = localStorage.getItem("accessToken");
         const content_ = JSON.stringify(body);
 
         let options_: RequestInit = {
@@ -1735,6 +1740,7 @@ export class Client {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
             }
         };
 
@@ -1746,7 +1752,7 @@ export class Client {
     protected processReviewsPOST(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
+        if (status === 201) {
             return response.text().then((_responseText) => {
             return;
             });
@@ -1761,11 +1767,16 @@ export class Client {
     /**
      * @return OK
      */
-    product(productId: number): Promise<void> {
-        let url_ = this.baseUrl + "/api/Reviews/product/{productId}";
+    product(productId: number, pageNumber: number = 1, pageSize: number = 5): Promise<void> {
+        let url_ = this.baseUrl + "/api/Reviews/product/{productId}?";
         if (productId === undefined || productId === null)
             throw new Error("The parameter 'productId' must be defined.");
         url_ = url_.replace("{productId}", encodeURIComponent("" + productId));
+        
+        // Thêm tham số phân trang
+        url_ += "pageNumber=" + encodeURIComponent("" + pageNumber) + "&";
+        url_ += "pageSize=" + encodeURIComponent("" + pageSize);
+        
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -1781,14 +1792,15 @@ export class Client {
 
     protected processProduct(response: Response): Promise<void> {
         const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        let _headers: any = {}; 
+        if (response.headers && response.headers.forEach) { 
+            response.headers.forEach((v: any, k: any) => _headers[k] = v); 
+        };
         if (status === 200) {
-            return response.text().then((_responseText) => {
-            return;
-            });
+            return response.json(); // Trả về dữ liệu JSON
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+                return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
         return Promise.resolve<void>(null as any);
@@ -2049,6 +2061,50 @@ export class Client {
             });
         }
         return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param productVariantId The ID of the product variant to update
+     * @param command The update command containing new quantity
+     * @return No content
+     */
+    cartsPUT(productVariantId: number, command: UpdateCartCommand): Promise<void> {
+        let url_ = this.baseUrl + "/api/Carts/{productVariantId}";
+        if (productVariantId === undefined || productVariantId === null)
+            throw new Error("The parameter 'productVariantId' must be defined.");
+        url_ = url_.replace("{productVariantId}", encodeURIComponent("" + productVariantId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(command);
+        const token = localStorage.getItem("accessToken");
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST", // Đổi từ PUT thành POST
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : "",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCartsPUT(_response);
+        });
+    }
+
+    protected processCartsPUT(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {};
+        if (response.headers && response.headers.forEach) {
+            response.headers.forEach((v: any, k: any) => _headers[k] = v);
+        }
+        if (status === 204) {
+            return Promise.resolve<void>(null as any);
+        } else {
+            return response.text().then((_responseText) => {
+                return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
     }
 }
 
@@ -3558,4 +3614,62 @@ function throwException(message: string, status: number, response: string, heade
         throw result;
     else
         throw new ApiException(message, status, response, headers, null);
+}
+
+// Thêm interface cho response của API reviews
+export interface ReviewsResponse {
+  items: ReviewDTO[];
+  totalCount: number;
+  pageNumber: number; 
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface ReviewDTO {
+  id: number;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  customerName: string; // Thêm trường customerName
+}
+
+// Thêm interface và class cho UpdateCartCommand
+export interface IUpdateCartCommand {
+    productVariantId?: number;
+    quantity: number;
+}
+
+export class UpdateCartCommand implements IUpdateCartCommand {
+    productVariantId?: number;
+    quantity: number = 0;
+
+    constructor(data?: IUpdateCartCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.productVariantId = _data["productVariantId"];
+            this.quantity = _data["quantity"];
+        }
+    }
+
+    static fromJS(data: any): UpdateCartCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateCartCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["productVariantId"] = this.productVariantId;
+        data["quantity"] = this.quantity;
+        return data;
+    }
 }

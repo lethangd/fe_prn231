@@ -7153,3 +7153,20 @@ input.input100 {
 .lh-2-9 {
 	line-height: 2.9;
 }
+
+.social-login-buttons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.google-login-button {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.google-login-button > div {
+  width: 100% !important;
+}

@@ -150,7 +150,7 @@ function ProductCard({ product }) {
             href={`#product_${product.id}`}
             data-toggle="modal"
           >
-            <img className="img-fluid" src={product.image} alt={product.name} />
+            <img className="img-fluid" src={product.coverImage} alt={product.name} />
           </a>
           <div className="product-overlay">
             <ul className="mb-0 list-inline">

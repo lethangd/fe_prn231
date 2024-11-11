@@ -37,3 +37,32 @@
 		transform: rotate(360deg);
 	}
 }
+
+.payment-methods {
+	background: #fff;
+	padding: 1.5rem;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.payment-methods .form-check {
+	padding: 1rem;
+	border: 1px solid #dee2e6;
+	border-radius: 6px;
+	margin-bottom: 0.5rem;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+.payment-methods .form-check:hover {
+	background-color: #f8f9fa;
+}
+
+.payment-methods .form-check-input:checked + .form-check-label {
+	color: #0d6efd;
+}
+
+.payment-methods .form-check i {
+	width: 24px;
+	text-align: center;
+}

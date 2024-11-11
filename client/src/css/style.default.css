@@ -381,6 +381,11 @@ button:active {
 		border: 1px solid #dee2e6 !important;
 	}
 }
+@media (min-width: 1200px) {
+	.container {
+		max-width: 1400px;
+	}
+}
 
 /*
     Opacity helpers - .opacity-[1-9]
@@ -2359,7 +2364,7 @@ body {
 	font-weight: 400;
 	line-height: 1.5;
 	color: #111111;
-	background-color: #fff !important;
+	/* background-color: #fff !important; */
 }
 
 a {

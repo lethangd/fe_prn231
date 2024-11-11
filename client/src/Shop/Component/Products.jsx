@@ -31,7 +31,7 @@ function Products({ products, sort }) {
               <Link className="d-block" to={`/detail/${product.id}`}>
                 <img
                   className="img-fluid w-100"
-                  src={product.image || "/path/to/default-image.jpg"}
+                  src={product.coverImage || "/path/to/default-image.jpg"}
                   alt={product.name}
                 />
               </Link>
