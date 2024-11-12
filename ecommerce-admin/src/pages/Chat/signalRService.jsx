@@ -8,43 +8,56 @@ class ChatService {
     this.connection = null;
   }
 
-  // Initialize connection and set up event listeners
   async startConnection(conversationId, onReceiveMessage) {
-    this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(hubUrl)
-      .withAutomaticReconnect()
-      .build();
+    try {
+      this.connection = new signalR.HubConnectionBuilder()
+        .withUrl(hubUrl)
+        .withAutomaticReconnect()
+        .build();
 
-    // Event listener for receiving messages
-    this.connection.on("ReceiveMessage", (message) => {
-      if (onReceiveMessage) onReceiveMessage(message);
-    });
+      this.connection.on("ReceiveMessage", (message) => {
+        if (onReceiveMessage) onReceiveMessage(message);
+      });
 
-    // Start the connection
-    await this.connection.start();
-    console.log("Connected to SignalR");
+      await this.connection.start();
+      console.log("Connected to SignalR");
 
-    // Join the conversation group
-    await this.connection.invoke("JoinConversation", conversationId);
-  }
-
-  // Send a message to the group
-  async sendMessage(conversationId, message) {
-    if (this.connection) {
-      await this.connection.invoke(
-        "SendMessageToGroup",
-        conversationId,
-        message
-      );
+      const conversationIdString = conversationId.toString();
+      await this.connection.invoke("JoinConversation", conversationIdString);
+    } catch (error) {
+      console.error("SignalR connection error:", error);
+      throw error;
     }
   }
 
-  // Stop the SignalR connection and leave the conversation group
+  async sendMessage(conversationId, message) {
+    if (this.connection?.state === signalR.HubConnectionState.Connected) {
+      try {
+        const conversationIdString = conversationId.toString();
+        await this.connection.invoke(
+          "SendMessageToGroup",
+          conversationIdString,
+          message
+        );
+      } catch (error) {
+        console.error("Error sending message:", error);
+        throw error;
+      }
+    } else {
+      console.error("No connection to server!");
+    }
+  }
+
   async stopConnection(conversationId) {
-    if (this.connection) {
-      await this.connection.invoke("LeaveConversation", conversationId);
-      await this.connection.stop();
-      console.log("Disconnected from SignalR");
+    if (this.connection?.state === signalR.HubConnectionState.Connected) {
+      try {
+        const conversationIdString = conversationId.toString();
+        await this.connection.invoke("LeaveConversation", conversationIdString);
+        await this.connection.stop();
+        console.log("Disconnected from SignalR");
+      } catch (error) {
+        console.error("Error stopping connection:", error);
+      }
     }
   }
 }

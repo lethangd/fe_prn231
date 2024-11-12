@@ -5,33 +5,51 @@ import ChatService from "./signalRService";
 const Chat = ({ conversationId }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  conversationId ? (conversationId = conversationId) : (conversationId = 1);
 
   useEffect(() => {
+    // Kiểm tra conversationId tồn tại trước khi kết nối
+    if (!conversationId) {
+      console.error("ConversationId is required");
+      return;
+    }
+
     // Start SignalR connection and set up message listener
-    ChatService.startConnection(conversationId, (message) => {
+    ChatService.startConnection(conversationId.toString(), (message) => {
       setMessages((prevMessages) => [...prevMessages, message]);
     });
 
     // Clean up when component unmounts
     return () => {
-      ChatService.stopConnection(conversationId);
+      if (conversationId) {
+        ChatService.stopConnection(conversationId.toString());
+      }
     };
   }, [conversationId]);
 
   // Handle sending new messages
   const handleSendMessage = async () => {
+    if (!conversationId) {
+      console.error("ConversationId is required");
+      return;
+    }
+
     if (newMessage.trim()) {
-      await ChatService.sendMessage(conversationId, newMessage);
+      await ChatService.sendMessage(conversationId.toString(), newMessage);
       setNewMessage("");
     }
   };
+
+  if (!conversationId) {
+    return <div>Loading chat...</div>;
+  }
 
   return (
     <div className="chat-container">
       <div className="chat-messages">
         {messages.map((msg, index) => (
           <div key={index} className="chat-message">
-            {msg}
+            {typeof msg === "object" ? msg.content : msg}
           </div>
         ))}
       </div>

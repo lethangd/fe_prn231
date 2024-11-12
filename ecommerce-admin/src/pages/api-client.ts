@@ -1977,10 +1977,11 @@ export class Client {
         let url_ = this.baseUrl + "/api/users/profile";
         url_ = url_.replace(/[?&]$/, "");
         let token = localStorage.getItem("accessToken");
+        let tokenAdmin = localStorage.getItem("tokenAdmin");
         let options_: RequestInit = {
             method: "GET",
             headers: {
-                "Authorization": token ? `Bearer ${token}` : "", // Thêm token vào headers
+                "Authorization": tokenAdmin ? `Bearer ${tokenAdmin}` : `Bearer ${token}`,
             },
         };
 

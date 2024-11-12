@@ -25,8 +25,11 @@ class ChatService {
       await this.connection.start();
       console.log("Connected to SignalR");
 
+      // Convert conversationId to string if it's a number
+      const conversationIdString = conversationId.toString();
+
       // Join the conversation group
-      await this.connection.invoke("JoinConversation", conversationId);
+      await this.connection.invoke("JoinConversation", conversationIdString);
     } catch (error) {
       console.error("SignalR connection error:", error);
     }
@@ -36,9 +39,12 @@ class ChatService {
   async sendMessage(conversationId, message) {
     if (this.connection) {
       try {
+        // Convert conversationId to string if it's a number
+        const conversationIdString = conversationId.toString();
+
         await this.connection.invoke(
           "SendMessageToGroup",
-          conversationId,
+          conversationIdString,
           message
         );
       } catch (error) {
