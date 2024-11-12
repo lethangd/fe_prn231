@@ -1,29 +1,22 @@
-import React from "react";
-import PropTypes from "prop-types";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
 import convertMoney from "../../convertMoney";
 
-ListCart.propTypes = {
-  listCart: PropTypes.array,
-  onDeleteCart: PropTypes.func,
-  onUpdateCount: PropTypes.func,
-};
+function ListCart({ listCart, onDeleteCart, onUpdateQuantity }) {
+  const [tempQuantities, setTempQuantities] = useState({});
 
-ListCart.defaultProps = {
-  listCart: [],
-  onDeleteCart: null,
-  onUpdateCount: null,
-};
+  const handleQuantityChange = (productVariantId, newQuantity) => {
+    if (newQuantity < 1) return;
+    
+    setTempQuantities(prev => ({
+      ...prev,
+      [productVariantId]: newQuantity
+    }));
 
-function ListCart({ listCart, onDeleteCart, onUpdateCount }) {
-  const handleDelete = (itemId) => {
-    if (onDeleteCart) onDeleteCart(itemId);
-  };
+    const timeoutId = setTimeout(() => {
+      onUpdateQuantity(productVariantId, newQuantity);
+    }, 500);
 
-  const handleQuantityChange = (productId, quantity, action) => {
-    if (!onUpdateCount) return;
-    const updatedQuantity = action === "increase" ? quantity + 1 : quantity - 1;
-    if (updatedQuantity > 0) onUpdateCount(productId, updatedQuantity);
+    return () => clearTimeout(timeoutId);
   };
 
   return (
@@ -31,6 +24,9 @@ function ListCart({ listCart, onDeleteCart, onUpdateCount }) {
       <table className="table">
         <thead className="bg-light">
           <tr className="text-center">
+            <th className="border-0" scope="col">
+              <strong className="text-small text-uppercase">No.</strong>
+            </th>
             <th className="border-0" scope="col">
               <strong className="text-small text-uppercase">Image</strong>
             </th>
@@ -52,80 +48,111 @@ function ListCart({ listCart, onDeleteCart, onUpdateCount }) {
           </tr>
         </thead>
         <tbody>
-          {listCart.map((item) => (
-            <tr className="text-center" key={item.id}>
-              <td className="pl-0 border-0">
-                <div className="media align-items-center justify-content-center">
-                  <Link
-                    className="reset-anchor d-block animsition-link"
-                    to={`/detail/${item.productId}`}
-                  >
-                    <img
-                      src={item.image || "/path/to/default-image.jpg"}
-                      alt={item.productName}
-                      width="70"
-                    />
-                  </Link>
-                </div>
-              </td>
-              <td className="align-middle border-0">
-                <div className="media align-items-center justify-content-center">
-                  <Link
-                    className="reset-anchor h6 animsition-link"
-                    to={`/detail/${item.productId}`}
-                  >
-                    {item.productName}
-                  </Link>
-                  <p className="small text-muted">{item.attributes}</p>
-                </div>
-              </td>
-              <td className="align-middle border-0">
-                <p className="mb-0 small">{convertMoney(item.price)} VND</p>
-              </td>
-              <td className="align-middle border-0">
-                <div className="quantity justify-content-center">
-                  <button
-                    className="dec-btn p-0"
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      handleQuantityChange(item.id, item.quantity, "decrease")
-                    }
-                  >
-                    <i className="fas fa-caret-left"></i>
-                  </button>
-                  <input
-                    className="form-control form-control-sm border-0 shadow-0 p-0"
-                    type="text"
-                    value={item.quantity}
-                    readOnly
-                  />
-                  <button
-                    className="inc-btn p-0"
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      handleQuantityChange(item.id, item.quantity, "increase")
-                    }
-                  >
-                    <i className="fas fa-caret-right"></i>
-                  </button>
-                </div>
-              </td>
-              <td className="align-middle border-0">
-                <p className="mb-0 small">
-                  {convertMoney(item.price * item.quantity)} VND
-                </p>
-              </td>
-              <td className="align-middle border-0">
-                <button
-                  className="reset-anchor remove_cart"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleDelete(item.id)}
-                >
-                  <i className="fas fa-trash-alt small text-muted"></i>
-                </button>
-              </td>
-            </tr>
-          ))}
+          {listCart &&
+            listCart.map((value, index) => {
+              const displayQuantity = tempQuantities[value.productVariantId] || value.quantity;
+              
+              return (
+                <tr className="text-center" key={value.productVariantId}>
+                  <td className="align-middle">
+                    <span className="font-weight-bold">{index + 1}</span>
+                  </td>
+                  <td className="align-middle">
+                    <img src={value.image} alt={value.name} width="70" />
+                  </td> 
+                  <td className="align-middle">
+                    <div className="media align-items-center justify-content-center">
+                      <div className="media-body">
+                        <div className="d-flex align-items-center justify-content-center">
+                          <div className="text-muted small">
+                            <a href={`/detail/${value.productId}`}>{value.productName && `${value.productName} (${value.attributes})`}</a>
+                          </div>
+                        </div>
+                        <p className="mb-0 text-small">
+                          {value.name}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  
+                  <td className="align-middle">
+                    <div className="price-container">
+                      {value.originalPrice !== value.price ? (
+                        <>
+                          <p className="mb-0 small text-muted text-decoration-line-through">
+                            <del>{convertMoney(value.price)} VND</del>
+                          </p>
+                          <p className="mb-0 small text-danger">
+                            {convertMoney(value.salePrice)} VND
+                          </p>
+                        </>
+                      ) : (
+                        <p className="mb-0 small">
+                          {convertMoney(value.price)} VND
+                        </p>
+                      )}
+                    </div>
+                  </td>
+                  <td className="align-middle">
+                    <div className="border d-flex align-items-center justify-content-between px-3">
+                      <div className="quantity">
+                        <button 
+                          className="dec-btn p-0"
+                          onClick={() => handleQuantityChange(value.productVariantId, displayQuantity - 1)}
+                          disabled={displayQuantity <= 1}
+                        >
+                          <i className="fas fa-caret-left"></i>
+                        </button>
+                        <input
+                          className="form-control border-0 shadow-0 p-0"
+                          type="text"
+                          value={displayQuantity}
+                          onChange={(e) => {
+                            const newQuantity = parseInt(e.target.value);
+                            if (!isNaN(newQuantity) && newQuantity >= 1) {
+                              handleQuantityChange(value.productVariantId, newQuantity);
+                            }
+                          }}
+                          min="1"
+                        />
+                        <button 
+                          className="inc-btn p-0"
+                          onClick={() => handleQuantityChange(value.productVariantId, displayQuantity + 1)}
+                        >
+                          <i className="fas fa-caret-right"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="align-middle">
+                    <div className="total-price-container">
+                      {value.originalPrice !== value.price ? (
+                        <>
+                          <p className="mb-0 small text-muted text-decoration-line-through">
+                            {convertMoney(value.price * value.quantity)} VND
+                          </p>
+                          <p className="mb-0 small text-danger">
+                            {convertMoney(value.salePrice * value.quantity)} VND
+                          </p>
+                        </>
+                      ) : (
+                        <p className="mb-0 small">
+                          {convertMoney(value.price * value.quantity)} VND
+                        </p>
+                      )}
+                    </div>
+                  </td>
+                  <td className="align-middle">
+                    <button
+                      className="btn btn-link text-dark p-0"
+                      onClick={() => onDeleteCart(value.id)}
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
         </tbody>
       </table>
     </div>

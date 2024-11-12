@@ -1,0 +1,94 @@
+.small-images-column {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.small-image-container {
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.small-image-container:hover {
+  border-color: #007bff;
+}
+
+.small-image-container.selected {
+  border-color: #007bff;
+}
+
+.small-image-container img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.main-image-container {
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+}
+
+.main-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.thumbnail-wrapper {
+  position: relative;
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.thumbnail-wrapper:hover {
+  border-color: #dee2e6;
+}
+
+.thumbnail-wrapper.selected {
+  border-color: #0d6efd;
+}
+
+.thumbnail-wrapper img {
+  transition: transform 0.2s ease;
+}
+
+.thumbnail-wrapper:hover img {
+  transform: scale(1.05);
+}
+
+/* Custom scrollbar */
+.overflow-auto::-webkit-scrollbar {
+  height: 6px;
+}
+
+.overflow-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Button styles */
+.btn-light {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.btn-light:hover {
+  opacity: 1;
+} 

@@ -1,0 +1,56 @@
+.profile-container {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.profile-container .card {
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.profile-container .card-body {
+  padding: 2rem;
+}
+
+.profile-container .text-muted {
+  color: #6c757d !important;
+}
+
+.profile-container hr {
+  margin: 1.5rem 0;
+}
+
+.address-item {
+  transition: all 0.3s ease;
+}
+
+.address-item:hover {
+  background-color: #f8f9fa;
+}
+
+.address-item .btn-outline-danger {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.address-item:hover .btn-outline-danger {
+  opacity: 1;
+}
+
+.form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-primary {
+  padding: 0.5rem 1.5rem;
+}
+
+.profile-image {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+} 

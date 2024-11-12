@@ -5,11 +5,11 @@ import ListCart from "./Component/ListCart";
 import alertify from "alertifyjs";
 import { Link, useHistory } from "react-router-dom";
 import convertMoney from "../convertMoney";
-import { Client } from "../api-client"; // Import NSwag-generated Client
+import { Client, AddToCartCommand, UpdateCartCommand } from "../api-client"; // Import NSwag-generated Client
 
 function Cart() {
   const [cart, setCart] = useState([]);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState({ originalTotal: 0, saleTotal: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const dispatch = useDispatch();
@@ -17,45 +17,52 @@ function Cart() {
   const apiClient = new Client();
 
   // Fetch cart data from server
+  const fetchCart = async () => {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      alertify.error("You need to log in to view your cart.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await apiClient.cartsGET();
+      setCart(response);
+      calculateTotal(response);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching cart data:", error);
+      setError("Failed to load cart. Please try again.");
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchCart = async () => {
-      const token = localStorage.getItem("accessToken");
-
-      if (!token) {
-        alertify.error("You need to log in to view your cart.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const response = await apiClient.cartsGET({
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setCart(response);
-        calculateTotal(response);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching cart data:", error);
-        setError("Failed to load cart. Please try again.");
-        setLoading(false);
-      }
-    };
-
     fetchCart();
   }, []);
 
   // Calculate total cost
   const calculateTotal = (cartItems) => {
-    const totalAmount = cartItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
+    const totals = cartItems.reduce(
+      (acc, item) => {
+        const originalTotal = item.price * item.quantity;
+        const saleTotal = item.salePrice ? item.salePrice * item.quantity : originalTotal;
+        
+        return {
+          originalTotal: acc.originalTotal + originalTotal,
+          saleTotal: acc.saleTotal + saleTotal,
+        };
+      },
+      { originalTotal: 0, saleTotal: 0 }
     );
-    setTotal(totalAmount);
+    
+    setTotal(totals);
   };
 
   // Handle item deletion from cart
-  const onDeleteCart = async (productId) => {
+  const onDeleteCart = async (id) => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
       alertify.error("You need to log in to delete items from your cart.");
@@ -63,20 +70,36 @@ function Cart() {
     }
 
     try {
-      await apiClient.cartsDELETE(productId, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCart((prevCart) => {
-        const updatedCart = prevCart.filter(
-          (item) => item.productId !== productId
-        );
-        calculateTotal(updatedCart);
-        return updatedCart;
-      });
+      await apiClient.cartsDELETE(id);
       alertify.success("Product removed from cart.");
+      // Reload cart data after successful deletion
+      fetchCart();
     } catch (error) {
       console.error("Error deleting cart item:", error);
       alertify.error("Failed to remove item from cart. Please try again.");
+    }
+  };
+
+  // Handle quantity update
+  const onUpdateQuantity = async (productId, newQuantity) => {
+    if (newQuantity < 1) {
+      alertify.error("Quantity cannot be less than 1");
+      return;
+    }
+
+    try {
+      const updateCommand = new UpdateCartCommand({
+        productVariantId: productId,
+        quantity: newQuantity
+      });
+
+      await apiClient.cartsPUT(productId, updateCommand);
+      alertify.success("Cart updated successfully!");
+      // Reload cart data after successful update
+      fetchCart();
+    } catch (error) {
+      console.error("Error updating cart quantity:", error);
+      alertify.error("Failed to update quantity. Please try again.");
     }
   };
 
@@ -119,16 +142,8 @@ function Cart() {
           <div className="col-lg-8 mb-4 mb-lg-0">
             <ListCart
               listCart={cart}
-              onDeleteCart={onDeleteCart} // Pass down delete handler
-              onUpdateCount={(productId, quantity) => {
-                // Function to update quantity if needed
-                setCart((prevCart) =>
-                  prevCart.map((item) =>
-                    item.productId === productId ? { ...item, quantity } : item
-                  )
-                );
-                calculateTotal(cart);
-              }}
+              onDeleteCart={onDeleteCart}
+              onUpdateQuantity={onUpdateQuantity} // Pass down update handler
             />
             <div className="bg-light px-4 py-3">
               <div className="row align-items-center text-center">
@@ -159,11 +174,29 @@ function Cart() {
               <div className="card-body">
                 <h5 className="text-uppercase mb-4">Cart total</h5>
                 <ul className="list-unstyled mb-0">
-                  <li className="d-flex justify-content-between py-3 border-bottom">
+                  {total.originalTotal !== total.saleTotal && (
+                    <>
+                      <li className="d-flex justify-content-between py-2">
+                        <strong className="text-muted">Original Cost:</strong>
+                        <span className="text-muted text-decoration-line-through">
+                          {convertMoney(total.originalTotal)} VND
+                        </span>
+                      </li>
+                      <li className="d-flex justify-content-between py-2 border-bottom">
+                        <strong className="text-success">Save:</strong>
+                        <span className="text-success">
+                          {convertMoney(total.originalTotal - total.saleTotal)} VND
+                        </span>
+                      </li>
+                    </>
+                  )}
+                  <li className="d-flex justify-content-between py-3">
                     <strong className="text-uppercase small font-weight-bold">
-                      Total
+                      Total Cost:
                     </strong>
-                    <strong>{convertMoney(total)} VND</strong>
+                    <strong className="text-danger">
+                      {convertMoney(total.saleTotal)} VND
+                    </strong>
                   </li>
                 </ul>
               </div>

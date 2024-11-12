@@ -23,8 +23,10 @@ function Name() {
         // Set the user's profile data in state
         setUserProfile(response);
       } catch (error) {
-        setError("Failed to fetch user profile.");
-        console.error("Profile fetch error:", error);
+        if (token) {
+          console.error("Profile fetch error:", error);
+          // setError("Failed to fetch user profile.");
+        }
       }
     };
 
@@ -66,6 +68,12 @@ function Name() {
           to={"/history"}
         >
           History
+        </Link>
+        <Link
+          className="dropdown-item border-0 transition-link"
+          to={"/profile"}
+        >
+          My profile
         </Link>
       </div>
     </li>
