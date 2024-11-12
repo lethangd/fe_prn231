@@ -1,3 +1,5 @@
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import * as Icons from "react-icons/tb";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +10,7 @@ import Offcanvas from "../../components/common/Offcanvas.jsx";
 import RangeSlider from "../../components/common/RangeSlider.jsx";
 import Pagination from "../../components/common/Pagination.jsx";
 import TableAction from "../../components/common/TableAction.jsx";
-import { Client } from "../api-client"; // Import the NSwag-generated API client
+import { Client } from "../api-client";
 
 const ManageProduct = () => {
   const [products, setProducts] = useState([]);
@@ -20,11 +22,10 @@ const ManageProduct = () => {
   });
   const [isOffcanvasOpen, setIsOffcanvasOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
-
   const apiClient = new Client();
 
-  // Fetch products based on filters
   const fetchProducts = async () => {
     try {
       const response = await apiClient.productGET(
@@ -36,15 +37,15 @@ const ManageProduct = () => {
         10
       );
       setProducts(response.items);
+      setTotalPages(response.totalPages);
     } catch (error) {
       console.error("Failed to fetch products", error);
     }
   };
 
-  // Fetch categories for the dropdown
   const fetchCategories = async () => {
     try {
-      const categoryList = await apiClient.categoryGET(); // Assuming categoryGET fetches all categories
+      const categoryList = await apiClient.categoryGET();
       setCategories(categoryList);
     } catch (error) {
       console.error("Failed to fetch categories", error);
@@ -52,30 +53,42 @@ const ManageProduct = () => {
   };
 
   useEffect(() => {
-    fetchCategories(); // Fetch categories on component mount
+    fetchCategories();
   }, []);
 
   useEffect(() => {
-    fetchProducts(); // Refetch products when filters change
+    fetchProducts();
   }, [fields, currentPage]);
 
-  // Handle input changes
   const handleInputChange = (key, value) => {
     setFields((prevFields) => ({ ...prevFields, [key]: value }));
   };
 
-  // Handle range slider change
   const handleSliderChange = (newValues) => {
     setFields((prevFields) => ({ ...prevFields, priceRange: newValues }));
   };
 
-  // Toggle advanced filter offcanvas
   const handleToggleOffcanvas = () => setIsOffcanvasOpen(!isOffcanvasOpen);
 
-  // Apply filter and close the offcanvas
   const applyFilter = () => {
     fetchProducts();
     setIsOffcanvasOpen(false);
+  };
+
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(
+      products.map((product) => ({
+        ID: product.id,
+        Name: product.name,
+        Price: product.price,
+        Brand: product.brand,
+        Stock_Status: product.isInStock ? "Out of Stock" : "In Stock",
+      }))
+    );
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+
+    XLSX.writeFile(workbook, "Products.xlsx");
   };
 
   return (
@@ -96,9 +109,15 @@ const ManageProduct = () => {
                 value={fields.name}
                 onChange={(value) => handleInputChange("name", value)}
               />
+              {/* Thêm nút Export Excel */}
+              <Button
+                label="Export Excel"
+                className="sm"
+                icon={<Icons.TbFileExport />}
+                onClick={exportToExcel}
+              />
             </div>
 
-            {/* Offcanvas for Advanced Search */}
             <Offcanvas isOpen={isOffcanvasOpen} onClose={handleToggleOffcanvas}>
               <div className="offcanvas-head">
                 <h2>Advanced Search</h2>
@@ -142,7 +161,6 @@ const ManageProduct = () => {
               </div>
             </Offcanvas>
 
-            {/* Products Table */}
             <div className="content_body">
               <table className="table_responsive">
                 <thead>
@@ -170,13 +188,21 @@ const ManageProduct = () => {
                       <td>{product.name}</td>
                       <td>{product.price}</td>
                       <td>{product.brand}</td>
-                      <td>{product.inStock ? "In Stock" : "Out of Stock"}</td>
+                      <td>{product.isInStock ? "Out of Stock" : "In Stock"}</td>
                       <td>
                         <TableAction
                           actionItems={["Edit", "Delete"]}
-                          onActionItemClick={(action) => {
-                            if (action === "Edit")
+                          onActionItemClick={async (action) => {
+                            if (action === "Edit") {
                               navigate(`/catalog/product/manage/${product.id}`);
+                            } else if (action === "Delete") {
+                              try {
+                                await apiClient.productDELETE(product.id);
+                                fetchProducts();
+                              } catch (error) {
+                                console.error("Error deleting product:", error);
+                              }
+                            }
                           }}
                         />
                       </td>
@@ -186,10 +212,9 @@ const ManageProduct = () => {
               </table>
             </div>
 
-            {/* Pagination */}
             <Pagination
               currentPage={currentPage}
-              totalPages={5}
+              totalPages={totalPages}
               onPageChange={(page) => setCurrentPage(page)}
             />
           </div>

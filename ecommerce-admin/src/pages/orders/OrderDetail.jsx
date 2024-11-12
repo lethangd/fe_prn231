@@ -3,9 +3,7 @@ import * as Icons from "react-icons/tb";
 import { Link, useParams } from "react-router-dom";
 import { Client } from "../api-client"; // NSwag-generated API client
 import Badge from "../../components/common/Badge.jsx";
-import Rating from "../../components/common/Rating.jsx";
 import Button from "../../components/common/Button.jsx";
-import Profile from "../../components/common/Profile.jsx";
 import truck from "../../images/common/delivery-truck.gif";
 
 const OrderDetail = () => {
@@ -14,6 +12,7 @@ const OrderDetail = () => {
   const [order, setOrder] = useState(null);
   const [customerId, setCustomerId] = useState(null);
   const [products, setProducts] = useState([]);
+  const [productDetails, setProductDetails] = useState({});
   const [status, setStatus] = useState("");
 
   useEffect(() => {
@@ -27,6 +26,14 @@ const OrderDetail = () => {
       setCustomerId(orderData.userId);
       setProducts(orderData.items);
       setStatus(orderData.status);
+
+      // Fetch product details for each item
+      const details = {};
+      for (let product of orderData.items) {
+        const productData = await apiClient.productGET2(product.productId);
+        details[product.productId] = productData;
+      }
+      setProductDetails(details);
     } catch (error) {
       console.error("Failed to fetch order details:", error);
     }
@@ -84,24 +91,33 @@ const OrderDetail = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product) => (
-                    <tr key={product.id}>
-                      <td>
-                        <img
-                          src={product.imageThumbnail || "/placeholder.jpg"}
-                          alt={product.name}
-                        />
-                      </td>
-                      <td>
-                        <Link to={`/catalog/product/manage/${product.id}`}>
-                          {product.name}
-                        </Link>
-                      </td>
-                      <td>${product.price || "N/A"}</td>
-                      <td>{product.quantity}</td>
-                      <td>${(product.price * product.quantity).toFixed(2)}</td>
-                    </tr>
-                  ))}
+                  {products.map((product) => {
+                    const productData = productDetails[product.productId] || {};
+                    return (
+                      <tr key={product.productId}>
+                        <td>
+                          <img
+                            src={
+                              productData.imageThumbnail || "/placeholder.jpg"
+                            }
+                            alt={productData.name || "Product Image"}
+                            width={50}
+                            height={50}
+                          />
+                        </td>
+                        <td>
+                          <Link to={`/catalog/product/manage/${product.id}`}>
+                            {productData.name || product.name}
+                          </Link>
+                        </td>
+                        <td>${product.price || "N/A"}</td>
+                        <td>{product.quantity}</td>
+                        <td>
+                          ${(product.price * product.quantity).toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   <tr>
                     <td colSpan="4" className="td_no_p">
                       <b>Total Amount</b>

@@ -1,7 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import * as Icons from "react-icons/tb";
 import React, { useState, useEffect } from "react";
-import { Client } from "../api-client"; // Import NSwag client
+import { Client } from "../api-client";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import Input from "../../components/common/Input.jsx";
 import Badge from "../../components/common/Badge.jsx";
 import Button from "../../components/common/Button.jsx";
@@ -17,34 +19,33 @@ const ManageOrders = () => {
   const [bulkCheck, setBulkCheck] = useState(false);
   const [specificChecks, setSpecificChecks] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedValue, setSelectedValue] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
-  // Fetch orders from API
+  // Fetch orders from API (once, since backend doesn't support pagination)
   const fetchOrders = async () => {
     try {
       const response = await apiClient.orderGET();
-      setOrders(response);
+      setOrders(response); // Save the entire list of orders
     } catch (error) {
       console.error("Failed to fetch orders:", error);
     }
   };
 
-  // Cancel order
   const handleCancelOrder = async (orderId) => {
     try {
       await apiClient.cancel(orderId);
       alert(`Order ${orderId} has been canceled`);
-      fetchOrders(); // Refresh orders list after cancellation
+      fetchOrders();
     } catch (error) {
       console.error("Failed to cancel order:", error);
     }
   };
 
-  // Handle bulk actions dropdown
   const bulkAction = [
     { value: "delete", label: "Delete" },
     { value: "cancel", label: "Cancel" },
@@ -88,6 +89,38 @@ const ManageOrders = () => {
     }
   };
 
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(
+      orders.map((order) => ({
+        ID: order.id,
+        "Total Amount": order.totalAmount,
+        Status: order.status,
+        "Created At": new Date(order.createdAt).toLocaleDateString(),
+        "Updated At": new Date(order.updatedAt).toLocaleDateString(),
+      }))
+    );
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+
+    XLSX.writeFile(workbook, "Orders.xlsx");
+  };
+
+  // Filter orders based on search term
+  const filteredOrders = orders.filter((order) => {
+    const search = searchTerm.toLowerCase();
+    return (
+      order.id.toString().includes(search) || // Search by ID
+      order.totalAmount.toString().includes(search) // Search by amount
+    );
+  });
+
+  // Calculate data for current page
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <section className="orders">
       <div className="container">
@@ -101,8 +134,10 @@ const ManageOrders = () => {
                 options={bulkAction}
               />
               <Input
-                placeholder="Search Order..."
+                placeholder="Search Order by ID or Amount..."
                 className="sm table_search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
               <div className="btn_parent">
                 <Link to="/orders/add" className="sm button">
@@ -111,6 +146,12 @@ const ManageOrders = () => {
                 </Link>
                 <Button label="Advanced Filter" className="sm" />
                 <Button label="Save" className="sm" />
+                <Button
+                  label="Export Excel"
+                  className="sm"
+                  icon={<Icons.TbFileExport />}
+                  onClick={exportToExcel}
+                />
               </div>
             </div>
             <div className="content_body">
@@ -133,7 +174,7 @@ const ManageOrders = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((order) => (
+                    {paginatedOrders.map((order) => (
                       <tr key={order.id}>
                         <td className="td_checkbox">
                           <CheckBox
@@ -146,46 +187,20 @@ const ManageOrders = () => {
                         <td className="td_id">{order.id}</td>
                         <td>{order.totalAmount}</td>
                         <td>
-                          {order.status.toLowerCase() === "active" ||
-                          order.status.toLowerCase() === "completed" ||
-                          order.status.toLowerCase() === "approved" ||
-                          order.status.toLowerCase() === "delivered" ||
-                          order.status.toLowerCase() === "shipped" ||
-                          order.status.toLowerCase() === "new" ||
-                          order.status.toLowerCase() === "coming soon" ? (
-                            <Badge
-                              label={order.status}
-                              className="light-success"
-                            />
-                          ) : order.status.toLowerCase() === "inactive" ||
-                            order.status.toLowerCase() === "out of stock" ||
-                            order.status.toLowerCase() === "rejected" ||
-                            order.status.toLowerCase() === "locked" ||
-                            order.status.toLowerCase() === "canceled" ||
-                            order.status.toLowerCase() === "confirmed" ||
-                            order.status.toLowerCase() === "discontinued" ? (
-                            <Badge
-                              label={order.status}
-                              className="light-danger"
-                            />
-                          ) : order.status.toLowerCase() === "on sale" ||
-                            order.status.toLowerCase() === "featured" ||
-                            order.status.toLowerCase() === "shipping" ||
-                            order.status.toLowerCase() === "processing" ||
-                            order.status.toLowerCase() === "pending" ? (
-                            <Badge
-                              label={order.status}
-                              className="light-warning"
-                            />
-                          ) : order.status.toLowerCase() === "archive" ||
-                            order.status.toLowerCase() === "pause" ? (
-                            <Badge
-                              label={order.status}
-                              className="light-secondary"
-                            />
-                          ) : (
-                            order.status
-                          )}
+                          <Badge
+                            label={order.status}
+                            className={
+                              ["active", "completed", "approved"].includes(
+                                order.status.toLowerCase()
+                              )
+                                ? "light-success"
+                                : ["canceled", "rejected"].includes(
+                                    order.status.toLowerCase()
+                                  )
+                                ? "light-danger"
+                                : "light-warning"
+                            }
+                          />
                         </td>
                         <td>
                           {new Date(order.createdAt).toLocaleDateString()}
@@ -211,8 +226,8 @@ const ManageOrders = () => {
               <Dropdown
                 className="top show_rows sm"
                 placeholder="Rows per page"
-                selectedValue={selectedValue}
-                onClick={(option) => setSelectedValue(option.label)}
+                selectedValue={itemsPerPage}
+                onClick={(option) => setItemsPerPage(option.value)}
                 options={[
                   { value: 2, label: "2" },
                   { value: 5, label: "5" },
@@ -221,7 +236,7 @@ const ManageOrders = () => {
               />
               <Pagination
                 currentPage={currentPage}
-                totalPages={Math.ceil(orders.length / selectedValue)}
+                totalPages={totalPages}
                 onPageChange={setCurrentPage}
               />
             </div>

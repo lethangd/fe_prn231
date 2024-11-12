@@ -19,7 +19,7 @@ const ManageCategories = () => {
   const [bulkCheck, setBulkCheck] = useState(false);
   const [specificChecks, setSpecificChecks] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedValue, setSelectedValue] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: undefined,
@@ -47,7 +47,7 @@ const ManageCategories = () => {
     const newCategoryCommand = new CreateCategoryCommand({
       name: newCategory.name,
       description: newCategory.description,
-      parentId: newCategory.parentId, // Set parentId if applicable
+      parentId: newCategory.parentId,
     });
 
     try {
@@ -58,6 +58,13 @@ const ManageCategories = () => {
       console.error("Error creating category:", error);
     }
   };
+
+  // Tính toán danh sách phân trang
+  const totalPages = Math.ceil(categories.length / itemsPerPage);
+  const paginatedCategories = categories.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <section className="categories">
@@ -85,7 +92,6 @@ const ManageCategories = () => {
               </div>
               <Divider />
 
-              {/* Replacing MultiSelect with a standard <select> */}
               <div className="column">
                 <p>Parent Category</p>
                 <select
@@ -149,7 +155,7 @@ const ManageCategories = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {categories.map((category) => (
+                    {paginatedCategories.map((category) => (
                       <tr key={category.id}>
                         <td className="td_checkbox">
                           <CheckBox
@@ -184,8 +190,8 @@ const ManageCategories = () => {
               <Dropdown
                 className="top show_rows sm"
                 placeholder="Rows per page"
-                selectedValue={selectedValue}
-                onClick={(option) => setSelectedValue(option.label)}
+                selectedValue={itemsPerPage}
+                onClick={(option) => setItemsPerPage(option.value)}
                 options={[
                   { value: 5, label: "5" },
                   { value: 10, label: "10" },
@@ -193,8 +199,8 @@ const ManageCategories = () => {
               />
               <Pagination
                 currentPage={currentPage}
-                totalPages={5}
-                onPageChange={(page) => setCurrentPage(page)}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
               />
             </div>
           </div>
